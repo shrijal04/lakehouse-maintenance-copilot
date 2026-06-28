@@ -1,0 +1,42 @@
+export const pipelineJobs = [
+  {
+    id: 1,
+    name: "Bronze Data Ingestion",
+    status: "Running",
+    duration: "5 min",
+    lastRun: "10:15 AM",
+    description: "Loading raw source data",
+  },
+  {
+    id: 2,
+    name: "Silver Transformation",
+    status: "Completed",
+    duration: "8 min",
+    lastRun: "09:45 AM",
+    description: "Data cleaning and validation",
+  },
+  {
+    id: 3,
+    name: "Gold Aggregation",
+    status: "Queued",
+    duration: "--",
+    lastRun: "--",
+    description: "Business metrics generation",
+  },
+  {
+    id: 4,
+    name: "Snapshot Cleanup",
+    status: "Failed",
+    duration: "2 min",
+    lastRun: "Yesterday",
+    description: "Iceberg maintenance job",
+  },
+  {
+    id: 5,
+    name: "File Compaction",
+    status: "Completed",
+    duration: "12 min",
+    lastRun: "08:30 AM",
+    description: "Small file optimization",
+  },
+];
