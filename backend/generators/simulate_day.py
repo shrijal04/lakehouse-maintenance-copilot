@@ -55,7 +55,7 @@ def update_existing_orders(update_count=5):
 
 def insert_new_orders():
 
-    insert_today_orders(10)
+    insert_today_orders(800)
 
 
 def main():
