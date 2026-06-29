@@ -95,3 +95,28 @@ def get_products():
             }
             for row in result
         ]
+
+def get_existing_order_ids():
+    with engine.connect() as conn:
+        result = conn.execute(text("""
+            SELECT order_id
+            FROM orders
+        """))
+
+        return [row.order_id for row in result]
+
+
+def get_existing_orders():
+    with engine.connect() as conn:
+        result = conn.execute(text("""
+            SELECT order_id, status
+            FROM orders
+        """))
+
+        return [
+            {
+                "order_id": row.order_id,
+                "status": row.status
+            }
+            for row in result
+        ]

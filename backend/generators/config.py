@@ -58,3 +58,11 @@ PAYMENT_METHODS = [
     "Cash",
     "Bank Transfer"
 ]
+
+STATUS_FLOW = {
+    "Pending": "Processing",
+    "Processing": "Shipped",
+    "Shipped": "Delivered",
+    "Delivered": "Delivered",
+    "Cancelled": "Cancelled"
+}
