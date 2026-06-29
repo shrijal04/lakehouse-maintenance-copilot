@@ -1,3 +1,7 @@
+# ==========================
+# Next.js
+# ==========================
+
 # dependencies
 /node_modules
 
@@ -8,22 +12,53 @@
 # production
 /build
 
-# environment variables
+# ==========================
+# Environment Variables
+# ==========================
+
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# logs
+# ==========================
+# Logs
+# ==========================
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+*.log
 
+# ==========================
 # mac/windows
+# ==========================
+
 .DS_Store
 Thumbs.db
 
-# Python virtual environment
+# ==========================
+# Python
+# ==========================
+
 backend/.venv/
+backend/__pycache__/
+backend/**/*.py[cod]
+backend/.pytest_cache/
+
+# ==========================
+# Spark / Iceberg
+# ==========================
+
+backend/spark-warehouse/
+backend/warehouse/
+backend/metastore_db/
+
+# ==========================
+# VS Code / IDE
+# ==========================
+
+.vscode/
+.idea/
