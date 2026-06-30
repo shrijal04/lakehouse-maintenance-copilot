@@ -13,20 +13,14 @@ def get_table_health(spark, table_name: str) -> dict:
     """
     Returns health metrics for an Iceberg table.
     """
-    import os
-    import sys
 
-    BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-
-    sys.path.append(BASE_DIR)
-    sys.path.append(os.path.join(BASE_DIR, "spark"))
-
-    from spark.session import create_spark_session 
+    # Snapshot count
     snapshot_count = spark.sql(f"""
         SELECT COUNT(*) AS snapshots
         FROM {table_name}.snapshots
     """).collect()[0]["snapshots"]
 
+    # File statistics
     files = spark.sql(f"""
         SELECT
             COUNT(*) AS file_count,
@@ -35,12 +29,23 @@ def get_table_health(spark, table_name: str) -> dict:
         FROM {table_name}.files
     """).collect()[0]
 
+    # Manifest files
+    manifest_count = spark.sql(f"""
+        SELECT COUNT(*) AS manifest_count
+        FROM {table_name}.all_manifests
+    """).collect()[0]["manifest_count"]
+
+    # Placeholder (expensive to calculate every request)
+    orphan_file_count = 0
+
     return {
         "table": table_name,
         "snapshot_count": snapshot_count,
         "data_file_count": files["file_count"],
         "average_file_kb": files["avg_file_kb"],
         "total_size_mb": files["total_size_mb"],
+        "manifest_file_count": manifest_count,
+        "orphan_file_count": orphan_file_count,
     }
 
 
@@ -48,24 +53,18 @@ def print_table_health(metrics: dict):
     """
     Pretty prints table health.
     """
-    import os
-    import sys
 
-    BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-
-    sys.path.append(BASE_DIR)
-    sys.path.append(os.path.join(BASE_DIR, "spark"))
-
-    from spark.session import create_spark_session
     print("=" * 60)
     print("Lakehouse Health Report")
     print("=" * 60)
 
-    print(f"Table           : {metrics['table']}")
-    print(f"Snapshots       : {metrics['snapshot_count']}")
-    print(f"Data Files      : {metrics['data_file_count']}")
-    print(f"Average File KB : {metrics['average_file_kb']}")
-    print(f"Total Size MB   : {metrics['total_size_mb']}")
+    print(f"Table            : {metrics['table']}")
+    print(f"Snapshots        : {metrics['snapshot_count']}")
+    print(f"Manifest Files   : {metrics['manifest_file_count']}")
+    print(f"Orphan Files     : {metrics['orphan_file_count']}")
+    print(f"Data Files       : {metrics['data_file_count']}")
+    print(f"Average File KB  : {metrics['average_file_kb']}")
+    print(f"Total Size MB    : {metrics['total_size_mb']}")
 
 
 if __name__ == "__main__":

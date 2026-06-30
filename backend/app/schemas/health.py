@@ -7,3 +7,6 @@ class HealthResponse(BaseModel):
     data_file_count: int
     average_file_kb: float
     total_size_mb: float
+
+    manifest_file_count: int
+    orphan_file_count: int
