@@ -4,7 +4,7 @@ import {
   Database,
   Activity,
   Bot,
-  Settings,
+  Wrench,
 } from "lucide-react";
 
 export const navigation = [
@@ -29,9 +29,13 @@ export const navigation = [
     icon: Activity,
   },
   {
+    title: "Maintenance",
+    href: "/maintenance",
+    icon: Wrench,
+  },
+  {
     title: "AI Copilot",
     href: "/copilot",
     icon: Bot,
   },
-
 ];
