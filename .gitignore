@@ -1,29 +1,98 @@
-# dependencies
-/node_modules
+# ======================================================
+# Next.js
+# ======================================================
 
-# next build
-/.next
-/out
+node_modules/
+.next/
+out/
+build/
 
-# production
-/build
+# ======================================================
+# Environment Variables
+# ======================================================
 
-# environment variables
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# logs
+# Keep example environment file
+!.env.example
+
+# ======================================================
+# Logs
+# ======================================================
+
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# mac/windows
+# ======================================================
+# Operating System
+# ======================================================
+
 .DS_Store
 Thumbs.db
 
-# Python virtual environment
+# ======================================================
+# Python
+# ======================================================
+
 backend/.venv/
+backend/__pycache__/
+backend/**/*.py[cod]
+backend/.pytest_cache/
+backend/.mypy_cache/
+backend/.ruff_cache/
+
+# ======================================================
+# Spark / Iceberg
+# ======================================================
+
+backend/spark/warehouse/
+backend/spark-warehouse/
+backend/warehouse/
+backend/metastore_db/
+
+# Spark temporary files
+backend/**/*.crc
+
+# ======================================================
+# Jupyter
+# ======================================================
+
+.ipynb_checkpoints/
+
+# ======================================================
+# IDE
+# ======================================================
+
+.vscode/
+.idea/
+
+# ======================================================
+# Git
+# ======================================================
+
+*.orig
+
+# ======================================================
+# Build / Distribution
+# ======================================================
+
+dist/
+coverage/
+htmlcov/
+
+# ======================================================
+# Local Database Files
+# ======================================================
+
+*.db
+*.sqlite
+*.sqlite3
+
+backend/maintenance/trial.py
