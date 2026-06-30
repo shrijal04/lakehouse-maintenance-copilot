@@ -8,7 +8,8 @@ from app.services.maintenance_service import (
     request_orders_maintenance,
     confirm_orders_maintenance,
 )
-
+from app.services.health_history_service import get_health_history
+TABLE = "local.lakehouse.orders"
 router = APIRouter(
     prefix="/lakehouse",
     tags=["Lakehouse"],
@@ -25,6 +26,10 @@ def orders_health():
 @router.get("/orders/issues")
 def orders_issues():
     return get_orders_issues()
+
+@router.get("/orders/history")
+def orders_history():
+    return get_health_history(TABLE)
 
 @router.post(
     "/orders/maintenance/request",

@@ -11,6 +11,11 @@ from app.services.confirmation_service import (
     remove_confirmation,
 )
 
+from app.services.health_history_service import (
+    save_health_metrics,
+    get_health_history,
+)
+
 TABLE = "local.lakehouse.orders"
 
 
@@ -22,9 +27,23 @@ def get_orders_health():
     spark = create_spark_session()
 
     try:
-        return get_table_health(spark, TABLE)
+        metrics = get_table_health(spark, TABLE)
+
+        # Save every health check for trend analysis
+        save_health_metrics(metrics)
+
+        return metrics
+
     finally:
         spark.stop()
+
+
+# ---------------------------------------------------
+# Health Trend
+# ---------------------------------------------------
+
+def get_orders_health_history():
+    return get_health_history(TABLE)
 
 
 # ---------------------------------------------------
@@ -37,6 +56,7 @@ def get_orders_issues():
     try:
         metrics = get_table_health(spark, TABLE)
         return get_health_issues(metrics)
+
     finally:
         spark.stop()
 
@@ -74,13 +94,13 @@ def confirm_orders_maintenance(
     if not confirm:
         return {
             "status": "cancelled",
-            "message": "Maintenance cancelled."
+            "message": "Maintenance cancelled.",
         }
 
     if not is_valid_confirmation(confirmation_id):
         return {
             "status": "error",
-            "message": "Invalid or expired confirmation id."
+            "message": "Invalid or expired confirmation id.",
         }
 
     remove_confirmation(confirmation_id)
