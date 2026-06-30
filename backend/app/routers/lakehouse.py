@@ -9,12 +9,18 @@ from app.services.maintenance_service import (
     confirm_orders_maintenance,
 )
 from app.services.health_history_service import get_health_history
+from app.services.dashboard_service import get_dashboard_metrics
+
 TABLE = "local.lakehouse.orders"
 router = APIRouter(
     prefix="/lakehouse",
     tags=["Lakehouse"],
 )
 
+@router.get("/dashboard")
+def dashboard():
+
+    return get_dashboard_metrics()
 
 @router.get(
     "/orders/health",

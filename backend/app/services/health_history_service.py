@@ -43,27 +43,32 @@ def save_health_metrics(metrics):
 
 
 def get_health_history(table_name: str):
+
     with engine.connect() as conn:
+
         result = conn.execute(
             text("""
                 SELECT
-                    recorded_at,
-                    snapshot_count,
-                    data_file_count,
-                    average_file_kb
+                    DATE(recorded_at) AS day,
+                    AVG(snapshot_count) AS snapshot_count,
+                    AVG(data_file_count) AS data_file_count,
+                    AVG(average_file_kb) AS average_file_kb
                 FROM lakehouse_health_history
-                WHERE table_name = :table
-                ORDER BY recorded_at ASC
+                WHERE table_name = :table_name
+                GROUP BY DATE(recorded_at)
+                ORDER BY DATE(recorded_at)
             """),
-            {"table": table_name},
+            {
+                "table_name": table_name,
+            },
         )
 
         return [
             {
-                "checked_at": row.recorded_at,
-                "snapshot_count": row.snapshot_count,
-                "data_file_count": row.data_file_count,
-                "average_file_kb": row.average_file_kb,
+                "day": str(row.day),
+                "snapshot_count": round(row.snapshot_count),
+                "data_file_count": round(row.data_file_count),
+                "average_file_kb": round(row.average_file_kb, 2),
             }
             for row in result
         ]
