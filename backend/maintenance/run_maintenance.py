@@ -10,7 +10,10 @@ sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "spark"))
 
 from spark.session import create_spark_session
-from health_metric import get_table_health, print_table_health
+from maintenance.health_metric import (
+    get_table_health,
+    print_table_health,
+)
 
 
 TABLE = "local.lakehouse.orders"

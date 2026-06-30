@@ -13,7 +13,15 @@ def get_table_health(spark, table_name: str) -> dict:
     """
     Returns health metrics for an Iceberg table.
     """
+    import os
+    import sys
 
+    BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+    sys.path.append(BASE_DIR)
+    sys.path.append(os.path.join(BASE_DIR, "spark"))
+
+    from spark.session import create_spark_session 
     snapshot_count = spark.sql(f"""
         SELECT COUNT(*) AS snapshots
         FROM {table_name}.snapshots
@@ -40,7 +48,15 @@ def print_table_health(metrics: dict):
     """
     Pretty prints table health.
     """
+    import os
+    import sys
 
+    BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+    sys.path.append(BASE_DIR)
+    sys.path.append(os.path.join(BASE_DIR, "spark"))
+
+    from spark.session import create_spark_session
     print("=" * 60)
     print("Lakehouse Health Report")
     print("=" * 60)
