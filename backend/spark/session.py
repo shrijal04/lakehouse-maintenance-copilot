@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from config import JDBC_JAR, WAREHOUSE_PATH
+from spark.config import JDBC_JAR, WAREHOUSE_PATH
 
 
 def create_spark_session():

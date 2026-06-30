@@ -3,7 +3,7 @@ from maintenance.health_metric import (
     get_health_issues,
 )
 from maintenance.run_maintenance import run_maintenance
-from spark.session import create_spark_session
+from spark.manager import get_spark
 
 from app.services.confirmation_service import (
     create_confirmation,
@@ -24,18 +24,17 @@ TABLE = "local.lakehouse.orders"
 # ---------------------------------------------------
 
 def get_orders_health():
-    spark = create_spark_session()
+    spark = get_spark()
 
-    try:
-        metrics = get_table_health(spark, TABLE)
+
+    metrics = get_table_health(spark, TABLE)
 
         # Save every health check for trend analysis
-        save_health_metrics(metrics)
+    save_health_metrics(metrics)
 
-        return metrics
+    return metrics
 
-    finally:
-        spark.stop()
+
 
 
 # ---------------------------------------------------
@@ -51,14 +50,11 @@ def get_orders_health_history():
 # ---------------------------------------------------
 
 def get_orders_issues():
-    spark = create_spark_session()
+    spark = get_spark()
 
-    try:
-        metrics = get_table_health(spark, TABLE)
-        return get_health_issues(metrics)
+    metrics = get_table_health(spark, TABLE)
+    return get_health_issues(metrics)
 
-    finally:
-        spark.stop()
 
 
 # ---------------------------------------------------
