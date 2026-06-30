@@ -41,6 +41,7 @@ def create_spark_session():
         )
 
         .getOrCreate()
+        
     )
 
     spark.sparkContext.setLogLevel("WARN")

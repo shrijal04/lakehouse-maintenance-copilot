@@ -10,3 +10,8 @@ class HealthResponse(BaseModel):
 
     manifest_file_count: int
     orphan_file_count: int
+
+class HealthIssue(BaseModel):
+    severity: str
+    issue: str
+    recommendation: str

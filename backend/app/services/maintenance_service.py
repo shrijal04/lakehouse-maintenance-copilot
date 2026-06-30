@@ -1,4 +1,7 @@
-from maintenance.health_metric import get_table_health
+from maintenance.health_metric import (
+    get_table_health,
+    get_health_issues,
+)
 from maintenance.run_maintenance import run_maintenance
 from spark.session import create_spark_session
 
@@ -25,7 +28,21 @@ def get_orders_health():
 
 
 # ---------------------------------------------------
-# Step 1: Request Maintenance
+# Issues
+# ---------------------------------------------------
+
+def get_orders_issues():
+    spark = create_spark_session()
+
+    try:
+        metrics = get_table_health(spark, TABLE)
+        return get_health_issues(metrics)
+    finally:
+        spark.stop()
+
+
+# ---------------------------------------------------
+# Step 1 : Request Maintenance
 # ---------------------------------------------------
 
 def request_orders_maintenance():
@@ -46,7 +63,7 @@ def request_orders_maintenance():
 
 
 # ---------------------------------------------------
-# Step 2: Confirm Maintenance
+# Step 2 : Confirm Maintenance
 # ---------------------------------------------------
 
 def confirm_orders_maintenance(

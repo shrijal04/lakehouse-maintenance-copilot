@@ -29,13 +29,13 @@ def get_table_health(spark, table_name: str) -> dict:
         FROM {table_name}.files
     """).collect()[0]
 
-    # Manifest files
+    # Manifest count
     manifest_count = spark.sql(f"""
         SELECT COUNT(*) AS manifest_count
         FROM {table_name}.all_manifests
     """).collect()[0]["manifest_count"]
 
-    # Placeholder (expensive to calculate every request)
+    # Placeholder until remove_orphan_files is implemented
     orphan_file_count = 0
 
     return {
@@ -49,10 +49,56 @@ def get_table_health(spark, table_name: str) -> dict:
     }
 
 
+def get_health_issues(metrics: dict):
+    """
+    Computes health issues based on table metrics.
+    """
+
+    issues = []
+
+    # Snapshot Health
+    if metrics["snapshot_count"] > 20:
+        issues.append({
+            "severity": "Warning",
+            "issue": "Too many snapshots",
+            "recommendation": "Run Expire Snapshots"
+        })
+
+    # Small File Problem
+    if metrics["average_file_kb"] < 512:
+        issues.append({
+            "severity": "Critical",
+            "issue": "Average file size is too small",
+            "recommendation": "Run Rewrite Data Files"
+        })
+
+    # Metadata Health
+    if metrics["manifest_file_count"] > 100:
+        issues.append({
+            "severity": "Warning",
+            "issue": "Large number of manifest files",
+            "recommendation": "Rewrite metadata"
+        })
+
+    # Orphan Files
+    if metrics["orphan_file_count"] > 0:
+        issues.append({
+            "severity": "Critical",
+            "issue": "Orphan files detected",
+            "recommendation": "Remove Orphan Files"
+        })
+
+    if len(issues) == 0:
+        issues.append({
+            "severity": "Healthy",
+            "issue": "Table is healthy",
+            "recommendation": "No maintenance required"
+        })
+
+    return issues
+
+
 def print_table_health(metrics: dict):
-    """
-    Pretty prints table health.
-    """
 
     print("=" * 60)
     print("Lakehouse Health Report")
@@ -68,11 +114,19 @@ def print_table_health(metrics: dict):
 
 
 if __name__ == "__main__":
+
     spark = create_spark_session()
 
     TABLE = "local.lakehouse.orders"
 
     metrics = get_table_health(spark, TABLE)
+
     print_table_health(metrics)
+
+    print("\nDetected Issues")
+    print("-" * 40)
+
+    for issue in get_health_issues(metrics):
+        print(issue)
 
     spark.stop()

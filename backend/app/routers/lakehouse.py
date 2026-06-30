@@ -4,6 +4,7 @@ from app.schemas.health import HealthResponse
 from app.schemas.maintenance import ConfirmationResponse,MaintenanceConfirmation
 from app.services.maintenance_service import (
     get_orders_health,
+    get_orders_issues,
     request_orders_maintenance,
     confirm_orders_maintenance,
 )
@@ -21,6 +22,9 @@ router = APIRouter(
 def orders_health():
     return get_orders_health()
 
+@router.get("/orders/issues")
+def orders_issues():
+    return get_orders_issues()
 
 @router.post(
     "/orders/maintenance/request",

@@ -5,8 +5,8 @@ import HealthCards from "@/components/health/HealthCards";
 import HealthTrend from "@/components/health/HealthTrend";
 import StorageMetadata from "@/components/health/StoreMetadata";
 import IssuesTable from "@/components/health/IssuesTable";
-import ResourceUsage from "@/components/health/ResourceUsage";
-import MaintenanceHistory from "@/components/health/MaintenanceHistory";
+
+
 
 export default function HealthPage() {
   return (
@@ -37,12 +37,9 @@ export default function HealthPage() {
             <IssuesTable />
           </div>
 
-          <div className="lg:col-span-4">
-            <ResourceUsage />
-          </div>
+
         </div>
 
-        <MaintenanceHistory />
       </div>
     </AppLayout>
   );

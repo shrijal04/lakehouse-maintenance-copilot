@@ -1,20 +1,73 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { HeartPulse } from "lucide-react";
 
-import { healthScore } from "@/data/health";
-import HealthTrend from "@/components/health/HealthTrend";
-import StorageMetadata from "@/components/health/StoreMetadata";
-import IssuesTable from "@/components/health/IssuesTable";
-import ResourceUsage from "@/components/health/ResourceUsage";
-import MaintenanceHistory from "@/components/health/MaintenanceHistory";
+import { getHealth } from "@/services/health";
+import { TableHealth } from "@/types/health";
+
 export default function HealthScore() {
+  const [health, setHealth] = useState<TableHealth | null>(null);
+
+  useEffect(() => {
+    getHealth().then(setHealth);
+  }, []);
+
+  if (!health) {
+    return (
+      <div className="rounded-3xl border border-slate-800 bg-slate-900 p-10 text-white">
+        Loading...
+      </div>
+    );
+  }
+
+  // ----------------------------
+  // Calculate Health Score
+  // ----------------------------
+
+  let score = 100;
+
+  if (health.snapshot_count > 50) {
+    score -= 30;
+  } else if (health.snapshot_count > 20) {
+    score -= 15;
+  }
+
+  if (health.average_file_kb < 64) {
+    score -= 30;
+  } else if (health.average_file_kb < 128) {
+    score -= 15;
+  }
+
+  if (health.data_file_count > 20) {
+    score -= 20;
+  }
+
+  score = Math.max(score, 0);
+
+  let status: "Healthy" | "Warning" | "Critical";
+
+  if (score >= 80) {
+    status = "Healthy";
+  } else if (score >= 50) {
+    status = "Warning";
+  } else {
+    status = "Critical";
+  }
+
   const radius = 85;
   const stroke = 14;
-
   const circumference = 2 * Math.PI * radius;
 
   const offset =
-    circumference -
-    (healthScore.score / 100) * circumference;
+    circumference - (score / 100) * circumference;
+
+  const statusColor =
+    status === "Healthy"
+      ? "text-green-400"
+      : status === "Warning"
+      ? "text-yellow-400"
+      : "text-red-400";
 
   return (
     <div className="rounded-3xl border border-slate-800 bg-slate-900 px-10 pt-12 pb-10">
@@ -61,11 +114,11 @@ export default function HealthScore() {
 
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <p className="text-6xl font-bold text-white">
-              {healthScore.score}%
+              {score}%
             </p>
 
-            <p className="mt-2 text-lg font-medium text-green-400">
-              {healthScore.status}
+            <p className={`mt-2 text-lg font-medium ${statusColor}`}>
+              {status}
             </p>
           </div>
         </div>

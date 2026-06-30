@@ -1,6 +1,40 @@
-import { issues } from "@/data/health";
+"use client";
+
+import { useEffect, useState } from "react";
+
+import { getIssues } from "@/services/issues";
+
+interface Issue {
+  severity: "Healthy" | "Warning" | "Critical";
+  issue: string;
+  recommendation: string;
+}
 
 export default function IssuesTable() {
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getIssues()
+      .then((data) => {
+        setIssues(data);
+      })
+      .catch((error) => {
+        console.error(error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="rounded-3xl border border-slate-800 bg-slate-900 p-8 text-white">
+        Loading issues...
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-3xl border border-slate-800 bg-slate-900 p-8">
       <h2 className="mb-8 text-3xl font-semibold text-white">
@@ -11,54 +45,47 @@ export default function IssuesTable() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-slate-800 text-left text-slate-400">
-              <th className="w-1/5 pb-5 text-base font-semibold">
-                Table
-              </th>
-
-              <th className="w-1/5 pb-5 text-base font-semibold">
+              <th className="pb-5 text-base font-semibold">
                 Severity
               </th>
 
-              <th className="w-2/5 pb-5 text-base font-semibold">
+              <th className="pb-5 text-base font-semibold">
                 Issue
               </th>
 
-              <th className="w-1/5 pb-5 text-center text-base font-semibold">
-                Action
+              <th className="pb-5 text-base font-semibold">
+                Recommendation
               </th>
             </tr>
           </thead>
 
           <tbody>
-            {issues.map((issue) => (
+            {issues.map((issue, index) => (
               <tr
-                key={issue.id}
-                className="border-b border-slate-800 hover:bg-slate-800/40 transition"
+                key={index}
+                className="border-b border-slate-800 transition hover:bg-slate-800/40"
               >
-                <td className="py-7 font-medium text-white">
-                  {issue.table}
-                </td>
-
-                <td className="py-7">
+                <td className="py-6">
                   <span
-                    className={`rounded-full px-3 py-1 text-sm font-medium ${
-                      issue.severity === "Critical"
-                        ? "bg-red-500/20 text-red-400"
-                        : "bg-yellow-500/20 text-yellow-400"
-                    }`}
+                    className={`rounded-full px-3 py-1 text-sm font-medium
+                      ${
+                        issue.severity === "Critical"
+                          ? "bg-red-500/20 text-red-400"
+                          : issue.severity === "Warning"
+                          ? "bg-yellow-500/20 text-yellow-400"
+                          : "bg-green-500/20 text-green-400"
+                      }`}
                   >
                     {issue.severity}
                   </span>
                 </td>
 
-                <td className="py-7 text-slate-300">
+                <td className="py-6 text-white">
                   {issue.issue}
                 </td>
 
-                <td className="py-7 text-center">
-                  <button className="rounded-xl bg-cyan-500 px-5 py-2 text-sm font-semibold text-black transition hover:bg-cyan-400">
-                    {issue.action}
-                  </button>
+                <td className="py-6 text-slate-300">
+                  {issue.recommendation}
                 </td>
               </tr>
             ))}

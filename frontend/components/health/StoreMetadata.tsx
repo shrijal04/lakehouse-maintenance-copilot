@@ -1,16 +1,30 @@
-import {
-  HardDrive,
-  Database,
-} from "lucide-react";
+"use client";
 
-import {
-  storageUsage,
-  metadataHealth,
-} from "@/data/health";
+import { useEffect, useState } from "react";
+import { HardDrive, Database } from "lucide-react";
+
+import { getHealth } from "@/services/health";
+import { TableHealth } from "@/types/health";
 
 export default function StorageMetadata() {
+  const [health, setHealth] = useState<TableHealth | null>(null);
+
+  useEffect(() => {
+    getHealth().then(setHealth);
+  }, []);
+
+  if (!health) {
+    return (
+      <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6 text-white">
+        Loading...
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-6 lg:grid-cols-2">
+
+      {/* Storage Information */}
 
       <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
 
@@ -18,54 +32,47 @@ export default function StorageMetadata() {
           <HardDrive className="text-cyan-400" />
 
           <h2 className="text-xl font-semibold text-white">
-            Storage Usage
+            Storage
           </h2>
         </div>
 
         <div className="space-y-4">
 
-          <div>
-            <div className="mb-2 flex justify-between">
-              <span className="text-slate-300">
-                Used
-              </span>
+          <p className="text-white">
+            Total Size :
+            <span className="ml-2 font-bold">
+              {health.total_size_mb} MB
+            </span>
+          </p>
 
-              <span className="text-white">
-                {storageUsage.used}%
-              </span>
-            </div>
+          <p className="text-white">
+            Data Files :
+            <span className="ml-2 font-bold">
+              {health.data_file_count}
+            </span>
+          </p>
 
-            <div className="h-3 rounded-full bg-slate-700">
-
-              <div
-                className="h-3 rounded-full bg-cyan-500"
-                style={{
-                  width: `${storageUsage.used}%`,
-                }}
-              />
-
-            </div>
-
-          </div>
-
-          <p className="text-slate-400">
-            Available : {storageUsage.available}%
+          <p className="text-white">
+            Average File Size :
+            <span className="ml-2 font-bold">
+              {health.average_file_kb} KB
+            </span>
           </p>
 
         </div>
 
       </div>
 
+      {/* Metadata */}
+
       <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
 
         <div className="mb-5 flex items-center gap-3">
-
           <Database className="text-cyan-400" />
 
           <h2 className="text-xl font-semibold text-white">
             Metadata Health
           </h2>
-
         </div>
 
         <div className="space-y-4">
@@ -73,21 +80,21 @@ export default function StorageMetadata() {
           <p className="text-white">
             Snapshots :
             <span className="ml-2 font-bold">
-              {metadataHealth.snapshots}
+              {health.snapshot_count}
             </span>
           </p>
 
           <p className="text-white">
             Manifest Files :
             <span className="ml-2 font-bold">
-              {metadataHealth.manifestFiles}
+              {health.manifest_file_count}
             </span>
           </p>
 
           <p className="text-white">
             Orphan Files :
             <span className="ml-2 font-bold">
-              {metadataHealth.orphanFiles}
+              {health.orphan_file_count}
             </span>
           </p>
 
