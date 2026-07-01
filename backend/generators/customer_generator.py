@@ -3,9 +3,13 @@ import random
 from faker import Faker
 from sqlalchemy import text
 
-from database import engine
+from generators.database import engine
 
-from config import CITIES, CUSTOMER_SEGMENTS, COUNTRY
+from generators.config import (
+    ORDER_STATUS,
+    PAYMENT_METHODS,
+    CITIES,
+)
 
 fake = Faker()
 

@@ -1,6 +1,6 @@
-from session import create_spark_session
+from manager import get_spark
 
-spark = create_spark_session()
+spark = get_spark()
 
 spark.sql("""
 DESCRIBE TABLE local.lakehouse.orders

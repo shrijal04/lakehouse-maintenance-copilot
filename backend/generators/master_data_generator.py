@@ -1,7 +1,7 @@
 from sqlalchemy import text
 
-from database import engine
-from seed_data import CATEGORIES, BRANDS, STORES
+from generators.database import engine
+from generators.seed_data import CATEGORIES, BRANDS, STORES
 
 
 def seed_master_data():

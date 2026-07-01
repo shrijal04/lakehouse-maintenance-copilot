@@ -3,9 +3,9 @@ import random
 from faker import Faker
 from sqlalchemy import text
 
-from database import engine
-from repository import get_brands, get_categories
-from seed_data import PRODUCT_CATALOG
+from generators.database import engine
+from generators.repository import get_brands, get_categories
+from generators.seed_data import PRODUCT_CATALOG
 
 fake = Faker()
 

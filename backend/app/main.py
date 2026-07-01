@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from spark.manager import spark
 from app.routers.lakehouse import router
+from app.routers import etl
 
 
 @asynccontextmanager
@@ -33,3 +34,4 @@ app.add_middleware(
 )
 
 app.include_router(router)
+app.include_router(etl.router)
