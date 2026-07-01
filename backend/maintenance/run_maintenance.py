@@ -11,14 +11,12 @@ sys.path.append(os.path.join(BASE_DIR, "spark"))
 
 from spark.manager import get_spark
 
-from maintenance.health_metric import (
-    get_table_health,
-    print_table_health,
-)
+from maintenance.health_metric import HealthService
 
 from app.services.maintenance_history_service import (
     save_maintenance_job,
 )
+
 
 TABLES = [
     "local.lakehouse.orders",
@@ -26,187 +24,191 @@ TABLES = [
 ]
 
 
-def maintain_table(spark, table_name):
+class MaintenanceService:
 
-    print("\n" + "=" * 70)
-    print(f"Maintaining Table : {table_name}")
-    print("=" * 70)
+    def __init__(self, spark):
 
-    start_time = datetime.now()
+        self.spark = spark
+        self.health_service = HealthService(spark)
 
-    before = get_table_health(spark, table_name)
+    def maintain_table(self, table_name):
 
-    print("\nBefore Maintenance\n")
-    print_table_health(before)
+        print("\n" + "=" * 70)
+        print(f"Maintaining Table : {table_name}")
+        print("=" * 70)
 
-    # ===================================================
-    # Rewrite Data Files
-    # ===================================================
+        start_time = datetime.now()
 
-    rewrite_df = spark.sql(f"""
-    CALL local.system.rewrite_data_files(
-        table => '{table_name}'
-    )
-    """)
+        before = self.health_service.get_table_health(
+            table_name
+        )
 
-    rewrite = rewrite_df.first()
+        print("\nBefore Maintenance\n")
+        self.health_service.print_table_health(before)
 
-    print("\nRewrite Data Files")
-    rewrite_df.show(truncate=False)
+        # ==========================================
+        # Rewrite Data Files
+        # ==========================================
 
-    # ===================================================
-    # Rewrite Manifests
-    # ===================================================
+        rewrite_df = self.spark.sql(f"""
+            CALL local.system.rewrite_data_files(
+                table => '{table_name}'
+            )
+        """)
 
-    manifest_df = spark.sql(f"""
-    CALL local.system.rewrite_manifests(
-        table => '{table_name}'
-    )
-    """)
+        rewrite = rewrite_df.first()
 
-    manifest = manifest_df.first()
+        print("\nRewrite Data Files")
+        rewrite_df.show(truncate=False)
 
-    print("\nRewrite Manifest Files")
-    manifest_df.show(truncate=False)
+        # ==========================================
+        # Rewrite Manifests
+        # ==========================================
 
-    # ===================================================
-    # Expire Snapshots
-    # ===================================================
+        manifest_df = self.spark.sql(f"""
+            CALL local.system.rewrite_manifests(
+                table => '{table_name}'
+            )
+        """)
 
-    older_than = (
-        datetime.now() - timedelta(minutes=1)
-    ).strftime("%Y-%m-%d %H:%M:%S")
+        manifest = manifest_df.first()
 
-    expire_df = spark.sql(f"""
-    CALL local.system.expire_snapshots(
-        table => '{table_name}',
-        older_than => TIMESTAMP '{older_than}',
-        retain_last => 5
-    )
-    """)
+        print("\nRewrite Manifest Files")
+        manifest_df.show(truncate=False)
 
-    expire = expire_df.first()
+        # ==========================================
+        # Expire Snapshots
+        # ==========================================
 
-    print("\nExpire Snapshots")
-    expire_df.show(truncate=False)
+        older_than = (
+            datetime.now() - timedelta(minutes=1)
+        ).strftime("%Y-%m-%d %H:%M:%S")
 
-    # ===================================================
-    # Remove Orphan Files
-    # ===================================================
+        expire_df = self.spark.sql(f"""
+            CALL local.system.expire_snapshots(
+                table => '{table_name}',
+                older_than => TIMESTAMP '{older_than}',
+                retain_last => 5
+            )
+        """)
 
-    orphan_df = spark.sql(f"""
-    CALL local.system.remove_orphan_files(
-        table => '{table_name}'
-    )
-    """)
+        expire = expire_df.first()
 
-    orphan_files_removed = orphan_df.count()
+        print("\nExpire Snapshots")
+        expire_df.show(truncate=False)
 
-    print("\nRemove Orphan Files")
+        # ==========================================
+        # Remove Orphan Files
+        # ==========================================
 
-    if orphan_files_removed == 0:
-        print("No orphan files found.")
-    else:
-        orphan_df.show(truncate=False)
+        orphan_df = self.spark.sql(f"""
+            CALL local.system.remove_orphan_files(
+                table => '{table_name}'
+            )
+        """)
 
-    # ===================================================
-    # After Maintenance
-    # ===================================================
+        orphan_files_removed = orphan_df.count()
 
-    after = get_table_health(spark, table_name)
+        print("\nRemove Orphan Files")
 
-    print("\nAfter Maintenance\n")
-    print_table_health(after)
+        if orphan_files_removed == 0:
+            print("No orphan files found.")
+        else:
+            orphan_df.show(truncate=False)
 
-    # ===================================================
-    # Summary
-    # ===================================================
+        # ==========================================
+        # After Maintenance
+        # ==========================================
 
-    print("\n" + "=" * 60)
-    print(f"Maintenance Summary : {table_name}")
-    print("=" * 60)
+        after = self.health_service.get_table_health(
+            table_name
+        )
 
-    print(
-        f"Snapshots   : {before['snapshot_count']} -> {after['snapshot_count']}"
-    )
+        print("\nAfter Maintenance\n")
+        self.health_service.print_table_health(after)
 
-    print(
-        f"Data Files  : {before['data_file_count']} -> {after['data_file_count']}"
-    )
+        # ==========================================
+        # Summary
+        # ==========================================
 
-    print(
-        f"Avg File KB : {before['average_file_kb']} -> {after['average_file_kb']}"
-    )
+        print("\n" + "=" * 60)
+        print(f"Maintenance Summary : {table_name}")
+        print("=" * 60)
 
-    print(
-        f"Total Size  : {before['total_size_mb']} MB -> {after['total_size_mb']} MB"
-    )
+        print(
+            f"Snapshots   : {before['snapshot_count']} -> {after['snapshot_count']}"
+        )
 
-    end_time = datetime.now()
+        print(
+            f"Data Files  : {before['data_file_count']} -> {after['data_file_count']}"
+        )
 
-    duration = int(
-        (end_time - start_time).total_seconds()
-    )
+        print(
+            f"Avg File KB : {before['average_file_kb']} -> {after['average_file_kb']}"
+        )
 
-    # ===================================================
-    # Save Maintenance History
-    # ===================================================
+        print(
+            f"Total Size  : {before['total_size_mb']} MB -> {after['total_size_mb']} MB"
+        )
 
-    save_maintenance_job(
-        {
-            "table_name": table_name,
-            "status": "Success",
-            "duration_seconds": duration,
+        end_time = datetime.now()
 
-            "files_rewritten": rewrite.rewritten_data_files_count,
-            "files_added": rewrite.added_data_files_count,
-            "bytes_rewritten": rewrite.rewritten_bytes_count,
+        duration = int(
+            (end_time - start_time).total_seconds()
+        )
 
-            "manifests_rewritten": manifest.rewritten_manifests_count,
-            "manifests_added": manifest.added_manifests_count,
+        # ==========================================
+        # Save History
+        # ==========================================
 
-            "snapshots_deleted": expire.deleted_data_files_count,
-            "manifest_files_deleted": expire.deleted_manifest_files_count,
-            "manifest_lists_deleted": expire.deleted_manifest_lists_count,
+        save_maintenance_job(
+            {
+                "table_name": table_name,
+                "status": "Success",
+                "duration_seconds": duration,
 
-            "orphan_files_removed": orphan_files_removed,
+                "files_rewritten": rewrite.rewritten_data_files_count,
+                "files_added": rewrite.added_data_files_count,
+                "bytes_rewritten": rewrite.rewritten_bytes_count,
+
+                "manifests_rewritten": manifest.rewritten_manifests_count,
+                "manifests_added": manifest.added_manifests_count,
+
+                "snapshots_deleted": expire.deleted_data_files_count,
+                "manifest_files_deleted": expire.deleted_manifest_files_count,
+                "manifest_lists_deleted": expire.deleted_manifest_lists_count,
+
+                "orphan_files_removed": orphan_files_removed,
+            }
+        )
+
+        return {
+            "table": table_name,
+            "before": before,
+            "rewrite_data_files": {
+                "files_rewritten": rewrite.rewritten_data_files_count,
+                "files_added": rewrite.added_data_files_count,
+                "bytes_rewritten": rewrite.rewritten_bytes_count,
+            },
+            "rewrite_manifests": {
+                "manifests_rewritten": manifest.rewritten_manifests_count,
+                "manifests_added": manifest.added_manifests_count,
+            },
+            "expire_snapshots": {
+                column: getattr(expire, column)
+                for column in expire_df.columns
+            },
+            "after": after,
         }
-    )
 
-    return {
-        "table": table_name,
-        "before": before,
-        "rewrite_data_files": {
-            "files_rewritten": rewrite.rewritten_data_files_count,
-            "files_added": rewrite.added_data_files_count,
-            "bytes_rewritten": rewrite.rewritten_bytes_count,
-        },
-        "rewrite_manifests": {
-            "manifests_rewritten": manifest.rewritten_manifests_count,
-            "manifests_added": manifest.added_manifests_count,
-        },
-        "expire_snapshots": {
-            column: getattr(expire, column)
-            for column in expire_df.columns
-        },
-        "after": after,
-    }
+    def run_maintenance(self):
 
-
-def run_maintenance():
-
-    spark = get_spark()
-
-    results = []
-
-    try:
+        results = []
 
         for table in TABLES:
+
             results.append(
-                maintain_table(
-                    spark,
-                    table,
-                )
+                self.maintain_table(table)
             )
 
         return {
@@ -214,13 +216,17 @@ def run_maintenance():
             "tables": results,
         }
 
-    except Exception:
 
-        raise
+def main():
+
+    spark = get_spark()
+
+    maintenance_service = MaintenanceService(spark)
+
+    result = maintenance_service.run_maintenance()
+
+    print(result)
 
 
 if __name__ == "__main__":
-
-    result = run_maintenance()
-
-    print(result)
+    main()
