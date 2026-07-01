@@ -8,9 +8,14 @@ class HealthRepository:
     def __init__(self):
         self.engine = engine
 
+    # -------------------------------------------------
+    # Save one health snapshot
+    # -------------------------------------------------
+
     def save_health_metrics(self, metrics):
 
         with self.engine.begin() as conn:
+
             conn.execute(
                 text("""
                     INSERT INTO lakehouse_health_history
@@ -45,6 +50,10 @@ class HealthRepository:
                 },
             )
 
+    # -------------------------------------------------
+    # Return every recorded run
+    # -------------------------------------------------
+
     def get_health_history(self, table_name: str):
 
         with self.engine.connect() as conn:
@@ -52,26 +61,38 @@ class HealthRepository:
             result = conn.execute(
                 text("""
                     SELECT
-                        DATE(recorded_at) AS day,
-                        AVG(snapshot_count) AS snapshot_count,
-                        AVG(data_file_count) AS data_file_count,
-                        AVG(average_file_kb) AS average_file_kb
+                        id,
+                        recorded_at,
+                        snapshot_count,
+                        data_file_count,
+                        average_file_kb,
+                        total_size_mb,
+                        manifest_file_count,
+                        orphan_file_count
                     FROM lakehouse_health_history
-                    WHERE table_name = :table_name
-                    GROUP BY DATE(recorded_at)
-                    ORDER BY DATE(recorded_at)
+                    WHERE table_name = :table_nameLAKE
+                    ORDER BY recorded_at ASC
                 """),
                 {
                     "table_name": table_name,
                 },
             )
 
-            return [
-                {
-                    "day": str(row.day),
-                    "snapshot_count": round(row.snapshot_count),
-                    "data_file_count": round(row.data_file_count),
-                    "average_file_kb": round(row.average_file_kb, 2),
-                }
-                for row in result
-            ]
+            history = []
+
+            for run_no, row in enumerate(result, start=1):
+
+                history.append(
+                    {
+                        "run": run_no,
+                        "recorded_at": row.recorded_at.isoformat(),
+                        "snapshot_count": row.snapshot_count,
+                        "data_file_count": row.data_file_count,
+                        "average_file_kb": float(row.average_file_kb),
+                        "total_size_mb": float(row.total_size_mb),
+                        "manifest_file_count": row.manifest_file_count,
+                        "orphan_file_count": row.orphan_file_count,
+                    }
+                )
+
+            return history

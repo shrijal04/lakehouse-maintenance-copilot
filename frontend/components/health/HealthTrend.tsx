@@ -15,18 +15,25 @@ const API =
   process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 interface HealthHistory {
-  day: string;
+  run: number;
+  recorded_at: string;
   snapshot_count: number;
   data_file_count: number;
   average_file_kb: number;
+  total_size_mb: number;
+  manifest_file_count: number;
+  orphan_file_count: number;
 }
 
-type TableType = "orders" | "order_items";
+interface Props {
+  table: "orders" | "order-items";
+  title: string;
+}
 
-export default function HealthTrend() {
-  const [selectedTable, setSelectedTable] =
-    useState<TableType>("orders");
-
+export default function HealthTrend({
+  table,
+  title,
+}: Props) {
   const [history, setHistory] = useState<HealthHistory[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,52 +43,32 @@ export default function HealthTrend() {
         setLoading(true);
 
         const response = await fetch(
-          `${API}/lakehouse/${selectedTable}/history`
+          `${API}/lakehouse/${table}/history`
         );
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch history");
-        }
-
-        const data: HealthHistory[] = await response.json();
+        const data = await response.json();
 
         setHistory(data);
-      } catch (error) {
-        console.error(error);
+      } catch (err) {
+        console.error(err);
       } finally {
         setLoading(false);
       }
     }
 
     loadHistory();
-  }, [selectedTable]);
+  }, [table]);
 
   const chartData = history.map((item) => ({
-    time: new Date(item.day).toLocaleDateString([], {
-      month: "short",
-      day: "numeric",
-    }),
+    run: `Run ${item.run}`,
     files: item.data_file_count,
   }));
 
   return (
     <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-2xl font-semibold text-white">
-          Health Trend
-        </h2>
-
-        <select
-          value={selectedTable}
-          onChange={(e) =>
-            setSelectedTable(e.target.value as TableType)
-          }
-          className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-white"
-        >
-          <option value="orders">Orders</option>
-          <option value="order_items">Order Items</option>
-        </select>
-      </div>
+      <h2 className="mb-6 text-2xl font-semibold text-white">
+        {title}
+      </h2>
 
       {loading ? (
         <p className="text-slate-400">Loading...</p>
@@ -92,7 +79,7 @@ export default function HealthTrend() {
               <CartesianGrid stroke="#334155" />
 
               <XAxis
-                dataKey="time"
+                dataKey="run"
                 stroke="#94a3b8"
               />
 
@@ -105,6 +92,7 @@ export default function HealthTrend() {
                 dataKey="files"
                 stroke="#06b6d4"
                 strokeWidth={4}
+                dot={{ r: 5 }}
               />
             </LineChart>
           </ResponsiveContainer>

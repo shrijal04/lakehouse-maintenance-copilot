@@ -27,7 +27,15 @@ export default function HealthPage() {
 
         <HealthCards />
 
-        <HealthTrend />
+        <HealthTrend
+            table="orders"
+            title="Orders File Count Trend"
+        />
+
+        <HealthTrend
+            table="order-items"
+            title="Order Items File Count Trend"
+        />
 
         <StorageMetadata />
 
