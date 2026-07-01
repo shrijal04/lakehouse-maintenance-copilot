@@ -8,7 +8,7 @@ BASE_DIR = os.path.abspath(
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "spark"))
 
-from spark.session import create_spark_session
+from spark.session import SparkManager
 
 
 class SmallFileGenerator:
@@ -52,14 +52,25 @@ class SmallFileGenerator:
 
 def main():
 
-    spark = create_spark_session()
+    spark = SparkManager.get_spark()
 
-    generator = SmallFileGenerator(
-        spark=spark,
-        table_name="local.lakehouse.orders",
-    )
+    tables = [
+        "local.lakehouse.orders",
+        "local.lakehouse.order_items",
+    ]
 
-    generator.generate()
+    for table in tables:
+
+        print("=" * 60)
+        print(f"Generating small files for {table}")
+        print("=" * 60)
+
+        generator = SmallFileGenerator(
+            spark=spark,
+            table_name=table,
+        )
+
+        generator.generate()
 
     spark.stop()
 

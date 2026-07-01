@@ -1,49 +1,73 @@
-from session import create_spark_session
-from config import POSTGRES
-
-spark = create_spark_session()
-
-spark.sql("CREATE NAMESPACE IF NOT EXISTS local.lakehouse")
+from spark.config import POSTGRES
+from spark.manager import SparkManagerService
 
 
-def load_table(table_name: str):
+class InitialLoadPipeline:
 
-    print(f"\nLoading {table_name}...")
+    TABLES = [
+        "customers",
+        "products",
+        "stores",
+        "orders",
+        "order_items",
+    ]
 
-    df = (
-        spark.read
-        .format("jdbc")
-        .option("url", POSTGRES["url"])
-        .option("dbtable", table_name)
-        .option("user", POSTGRES["user"])
-        .option("password", POSTGRES["password"])
-        .option("driver", POSTGRES["driver"])
-        .load()
-    )
+    def __init__(self):
 
-    print(f"Rows: {df.count()}")
+        self.spark = SparkManagerService().get_spark()
 
-    (
-        df.writeTo(f"local.lakehouse.{table_name}")
-        .using("iceberg")
-        .createOrReplace()
-    )
+        self.spark.sql(
+            "CREATE NAMESPACE IF NOT EXISTS local.lakehouse"
+        )
 
-    print(f"{table_name} loaded successfully.")
+    def load_table(self, table_name: str):
+
+        print(f"\nLoading {table_name}...")
+
+        df = (
+            self.spark.read
+            .format("jdbc")
+            .option("url", POSTGRES["url"])
+            .option("dbtable", table_name)
+            .option("user", POSTGRES["user"])
+            .option("password", POSTGRES["password"])
+            .option("driver", POSTGRES["driver"])
+            .load()
+        )
+
+        print(f"Rows: {df.count()}")
+
+        (
+            df.writeTo(f"local.lakehouse.{table_name}")
+            .using("iceberg")
+            .createOrReplace()
+        )
+
+        print(f"{table_name} loaded successfully.")
+
+    def run(self):
+
+        for table in self.TABLES:
+
+            self.load_table(table)
+
+        print("\nInitial load completed.")
+
+        return {
+            "status": "Success",
+            "tables_loaded": len(self.TABLES),
+        }
 
 
-TABLES = [
-    "customers",
-    "products",
-    "stores",
-    "orders",
-    "order_items"
-]
+def main():
+
+    pipeline = InitialLoadPipeline()
+
+    result = pipeline.run()
+
+    print(result)
 
 
-for table in TABLES:
-    load_table(table)
+if __name__ == "__main__":
 
-print("\nInitial load completed.")
-
-spark.stop()
+    main()

@@ -3,88 +3,95 @@ from sqlalchemy import text
 from app.database import engine
 
 
-def save_maintenance_job(job):
+class MaintenanceHistoryRepository:
 
-    with engine.begin() as conn:
+    def __init__(self):
+        self.engine = engine
 
-        conn.execute(
-            text("""
-                INSERT INTO maintenance_history
-                (
-                    table_name,
-                    status,
-                    duration_seconds,
+    def save_maintenance_job(self, job):
 
-                    files_rewritten,
-                    files_added,
-                    bytes_rewritten,
+        with self.engine.begin() as conn:
 
-                    manifests_rewritten,
-                    manifests_added,
+            conn.execute(
+                text("""
+                    INSERT INTO maintenance_history
+                    (
+                        table_name,
+                        status,
+                        duration_seconds,
 
-                    snapshots_deleted,
-                    manifest_files_deleted,
-                    manifest_lists_deleted,
+                        files_rewritten,
+                        files_added,
+                        bytes_rewritten,
 
-                    orphan_files_removed
-                )
+                        manifests_rewritten,
+                        manifests_added,
 
-                VALUES
-                (
-                    :table_name,
-                    :status,
-                    :duration_seconds,
+                        snapshots_deleted,
+                        manifest_files_deleted,
+                        manifest_lists_deleted,
 
-                    :files_rewritten,
-                    :files_added,
-                    :bytes_rewritten,
+                        orphan_files_removed
+                    )
 
-                    :manifests_rewritten,
-                    :manifests_added,
+                    VALUES
+                    (
+                        :table_name,
+                        :status,
+                        :duration_seconds,
 
-                    :snapshots_deleted,
-                    :manifest_files_deleted,
-                    :manifest_lists_deleted,
+                        :files_rewritten,
+                        :files_added,
+                        :bytes_rewritten,
 
-                    :orphan_files_removed
-                )
-            """),
-            job,
-        )
+                        :manifests_rewritten,
+                        :manifests_added,
 
+                        :snapshots_deleted,
+                        :manifest_files_deleted,
+                        :manifest_lists_deleted,
 
-def get_maintenance_history(table_name: str):
+                        :orphan_files_removed
+                    )
+                """),
+                job,
+            )
 
-    with engine.connect() as conn:
+    def get_maintenance_history(
+        self,
+        table_name: str,
+    ):
 
-        result = conn.execute(
-            text("""
-                SELECT
-                    finished_at,
-                    status,
-                    duration_seconds,
-                    files_rewritten,
-                    manifests_rewritten,
-                    snapshots_deleted,
-                    orphan_files_removed
-                FROM maintenance_history
-                WHERE table_name = :table_name
-                ORDER BY finished_at ASC
-            """),
-            {
-                "table_name": table_name,
-            },
-        )
+        with self.engine.connect() as conn:
 
-        return [
-            {
-                "finished_at": row.finished_at,
-                "status": row.status,
-                "duration_seconds": row.duration_seconds,
-                "files_rewritten": row.files_rewritten,
-                "manifests_rewritten": row.manifests_rewritten,
-                "snapshots_deleted": row.snapshots_deleted,
-                "orphan_files_removed": row.orphan_files_removed,
-            }
-            for row in result
-        ]
+            result = conn.execute(
+                text("""
+                    SELECT
+                        finished_at,
+                        status,
+                        duration_seconds,
+                        files_rewritten,
+                        manifests_rewritten,
+                        snapshots_deleted,
+                        orphan_files_removed
+                    FROM maintenance_history
+                    WHERE table_name = :table_name
+                    ORDER BY finished_at ASC
+                """),
+                {
+                    "table_name": table_name,
+                },
+            )
+
+            return [
+                {
+                    "finished_at": row.finished_at,
+                    "status": row.status,
+                    "duration_seconds": row.duration_seconds,
+                    "files_rewritten": row.files_rewritten,
+                    "manifests_rewritten": row.manifests_rewritten,
+                    "snapshots_deleted": row.snapshots_deleted,
+                    "orphan_files_removed": row.orphan_files_removed,
+                }
+                for row in result
+            ]

@@ -1,21 +1,25 @@
 from fastapi import APIRouter
 from sqlalchemy import text
 
-from database import engine
-from spark.incremental_load import run_incremental_load
-from generators.simulate_day import simulate_business_day
-from spark.simulate_small_files import simulate_small_files
+from app.database import engine
+
+from spark.incremental_load import IncrementalETL
+from spark.simulate_small_files import SmallFileSimulator
+from generators.simulate_day import BusinessDaySimulator
+
 
 router = APIRouter(
     prefix="/etl",
-    tags=["ETL"]
+    tags=["ETL"],
 )
 
 
 @router.post("/run")
 def run_etl():
 
-    return run_incremental_load()
+    etl = IncrementalETL()
+
+    return etl.run()
 
 
 @router.get("/history")
@@ -46,8 +50,14 @@ def get_etl_history():
 @router.post("/simulate")
 def simulate():
 
-    return simulate_business_day()
+    simulator = BusinessDaySimulator()
+
+    return simulator.simulate_business_day()
+
 
 @router.post("/simulate-small-files")
-def simulate_small_files_endpoint():
-    return simulate_small_files()
+def simulate_small_files():
+
+    simulator = SmallFileSimulator()
+
+    return simulator.run()

@@ -1,20 +1,13 @@
-from spark.session import create_spark_session
-
-spark = None
+from spark.session import SparkManager
 
 
-def get_spark():
-    global spark
+class SparkManagerService:
 
-    try:
-        if spark is None:
-            spark = create_spark_session()
-        else:
-            # Check whether the Spark session is still alive
-            spark.sparkContext.applicationId
+    def __init__(self):
+        self.manager = SparkManager()
 
-    except Exception:
-        # Spark was stopped, so create a new one
-        spark = create_spark_session()
+    def get_spark(self):
+        return self.manager.get_spark()
 
-    return spark
+    def stop(self):
+        self.manager.stop()

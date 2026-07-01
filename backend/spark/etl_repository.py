@@ -1,162 +1,217 @@
-from sqlalchemy import text
 from datetime import datetime
 
-
 from sqlalchemy import text
-from spark.database import engine
+
+from spark.database import DatabaseManager
 
 
-def get_last_run(pipeline_name: str):
+class ETLRepository:
 
-    with engine.connect() as conn:
+    def __init__(self):
 
-        result = conn.execute(
-            text("""
-                SELECT last_run_timestamp
-                FROM etl_metadata
-                WHERE pipeline_name = :pipeline
-            """),
-            {
-                "pipeline": pipeline_name
-            }
-        )
+        self.engine = DatabaseManager().get_engine()
 
-        row = result.fetchone()
+    # ==========================================================
+    # ETL Metadata
+    # ==========================================================
 
-        if row:
-            return row.last_run_timestamp
+    def get_last_run(self, pipeline_name: str):
 
-        return datetime(2000, 1, 1)
+        with self.engine.connect() as conn:
 
+            result = conn.execute(
+                text("""
+                    SELECT last_run_timestamp
+                    FROM etl_metadata
+                    WHERE pipeline_name = :pipeline
+                """),
+                {
+                    "pipeline": pipeline_name
+                },
+            )
 
-def update_last_run(pipeline_name: str, timestamp):
+            row = result.fetchone()
 
-    with engine.begin() as conn:
+            if row:
+                return row.last_run_timestamp
 
-        conn.execute(
-            text("""
-                INSERT INTO etl_metadata
-                (
-                    pipeline_name,
-                    last_run_timestamp,
-                    status,
-                    updated_at
-                )
-                VALUES
-                (
-                    :pipeline,
-                    :ts,
-                    'SUCCESS',
-                    CURRENT_TIMESTAMP
-                )
+            return datetime(2000, 1, 1)
 
-                ON CONFLICT (pipeline_name)
+    def update_last_run(self, pipeline_name: str, timestamp):
 
-                DO UPDATE SET
+        with self.engine.begin() as conn:
 
-                    last_run_timestamp = EXCLUDED.last_run_timestamp,
+            conn.execute(
+                text("""
+                    INSERT INTO etl_metadata
+                    (
+                        pipeline_name,
+                        last_run_timestamp,
+                        status,
+                        updated_at
+                    )
+                    VALUES
+                    (
+                        :pipeline,
+                        :ts,
+                        'SUCCESS',
+                        CURRENT_TIMESTAMP
+                    )
 
-                    status = 'SUCCESS',
+                    ON CONFLICT (pipeline_name)
 
-                    updated_at = CURRENT_TIMESTAMP
-            """),
-            {
-                "pipeline": pipeline_name,
-                "ts": timestamp
-            }
-        )
+                    DO UPDATE SET
 
+                        last_run_timestamp = EXCLUDED.last_run_timestamp,
 
-# ==========================================================
-# NEW FUNCTIONS
-# ==========================================================
+                        status = 'SUCCESS',
 
-def get_order_count_between(start_date, end_date):
+                        updated_at = CURRENT_TIMESTAMP
+                """),
+                {
+                    "pipeline": pipeline_name,
+                    "ts": timestamp,
+                },
+            )
 
-    with engine.connect() as conn:
+    # ==========================================================
+    # ETL Logging
+    # ==========================================================
 
-        result = conn.execute(
-            text("""
-                SELECT COUNT(*)
-                FROM bronze_orders
-                WHERE order_date >= :start_date
-                  AND order_date <= :end_date
-            """),
-            {
-                "start_date": start_date,
-                "end_date": end_date
-            }
-        )
+    def log_etl_run(
+        self,
+        pipeline_name,
+        start_time,
+        end_time,
+        status,
+        orders_processed,
+        order_items_processed,
+        message,
+    ):
 
-        return result.scalar()
+        with self.engine.begin() as conn:
 
+            conn.execute(
+                text("""
+                    INSERT INTO etl_logs
+                    (
+                        pipeline_name,
+                        start_time,
+                        end_time,
+                        status,
+                        orders_processed,
+                        order_items_processed,
+                        message
+                    )
+                    VALUES
+                    (
+                        :pipeline,
+                        :start,
+                        :end,
+                        :status,
+                        :orders,
+                        :items,
+                        :message
+                    )
+                """),
+                {
+                    "pipeline": pipeline_name,
+                    "start": start_time,
+                    "end": end_time,
+                    "status": status,
+                    "orders": orders_processed,
+                    "items": order_items_processed,
+                    "message": message,
+                },
+            )
 
-def get_customer_count_between(start_date, end_date):
+    # ==========================================================
+    # Dashboard Metrics
+    # ==========================================================
 
-    with engine.connect() as conn:
+    def get_order_count_between(self, start_date, end_date):
 
-        result = conn.execute(
-            text("""
-                SELECT COUNT(DISTINCT customer_id)
-                FROM bronze_orders
-                WHERE order_date >= :start_date
-                  AND order_date <= :end_date
-            """),
-            {
-                "start_date": start_date,
-                "end_date": end_date
-            }
-        )
+        with self.engine.connect() as conn:
 
-        return result.scalar()
+            result = conn.execute(
+                text("""
+                    SELECT COUNT(*)
+                    FROM bronze_orders
+                    WHERE order_date >= :start_date
+                      AND order_date <= :end_date
+                """),
+                {
+                    "start_date": start_date,
+                    "end_date": end_date,
+                },
+            )
 
+            return result.scalar()
 
-def get_total_sales_between(start_date, end_date):
+    def get_customer_count_between(self, start_date, end_date):
 
-    with engine.connect() as conn:
+        with self.engine.connect() as conn:
 
-        result = conn.execute(
-            text("""
-                SELECT COALESCE(SUM(total_amount),0)
-                FROM bronze_orders
-                WHERE order_date >= :start_date
-                  AND order_date <= :end_date
-            """),
-            {
-                "start_date": start_date,
-                "end_date": end_date
-            }
-        )
+            result = conn.execute(
+                text("""
+                    SELECT COUNT(DISTINCT customer_id)
+                    FROM bronze_orders
+                    WHERE order_date >= :start_date
+                      AND order_date <= :end_date
+                """),
+                {
+                    "start_date": start_date,
+                    "end_date": end_date,
+                },
+            )
 
-        return float(result.scalar() or 0)
+            return result.scalar()
 
+    def get_total_sales_between(self, start_date, end_date):
 
-def get_top_products_between(start_date, end_date):
+        with self.engine.connect() as conn:
 
-    with engine.connect() as conn:
+            result = conn.execute(
+                text("""
+                    SELECT COALESCE(SUM(total_amount), 0)
+                    FROM bronze_orders
+                    WHERE order_date >= :start_date
+                      AND order_date <= :end_date
+                """),
+                {
+                    "start_date": start_date,
+                    "end_date": end_date,
+                },
+            )
 
-        result = conn.execute(
-            text("""
-                SELECT
-                    product_name,
-                    SUM(quantity) AS qty
-                FROM bronze_orders
-                WHERE order_date >= :start_date
-                  AND order_date <= :end_date
-                GROUP BY product_name
-                ORDER BY qty DESC
-                LIMIT 5
-            """),
-            {
-                "start_date": start_date,
-                "end_date": end_date
-            }
-        )
+            return float(result.scalar() or 0)
 
-        return [
-            {
-                "product": row.product_name,
-                "quantity": row.qty
-            }
-            for row in result
-        ]
+    def get_top_products_between(self, start_date, end_date):
+
+        with self.engine.connect() as conn:
+
+            result = conn.execute(
+                text("""
+                    SELECT
+                        product_name,
+                        SUM(quantity) AS qty
+                    FROM bronze_orders
+                    WHERE order_date >= :start_date
+                      AND order_date <= :end_date
+                    GROUP BY product_name
+                    ORDER BY qty DESC
+                    LIMIT 5
+                """),
+                {
+                    "start_date": start_date,
+                    "end_date": end_date,
+                },
+            )
+
+            return [
+                {
+                    "product": row.product_name,
+                    "quantity": row.qty,
+                }
+                for row in result
+            ]

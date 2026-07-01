@@ -2,44 +2,67 @@ from datetime import date, timedelta
 
 from pyspark.sql import Row
 
-from session import create_spark_session
+from spark.session import SparkManager
 
-spark = create_spark_session()
 
-start_date = date(2025, 1, 1)
-end_date = date(2027, 12, 31)
+class DateDimensionGenerator:
 
-rows = []
+    def __init__(self):
 
-current = start_date
+        self.spark = SparkManager()
 
-while current <= end_date:
+    def generate(
+        self,
+        start_date=date(2025, 1, 1),
+        end_date=date(2027, 12, 31),
+    ):
 
-    rows.append(
-        Row(
-            date_key=int(current.strftime("%Y%m%d")),
-            full_date=current,
-            year=current.year,
-            quarter=(current.month - 1) // 3 + 1,
-            month=current.month,
-            month_name=current.strftime("%B"),
-            day=current.day,
-            day_name=current.strftime("%A"),
-            week_of_year=current.isocalendar().week,
-            is_weekend=current.weekday() >= 5,
+        rows = []
+
+        current = start_date
+
+        while current <= end_date:
+
+            rows.append(
+                Row(
+                    date_key=int(current.strftime("%Y%m%d")),
+                    full_date=current,
+                    year=current.year,
+                    quarter=(current.month - 1) // 3 + 1,
+                    month=current.month,
+                    month_name=current.strftime("%B"),
+                    day=current.day,
+                    day_name=current.strftime("%A"),
+                    week_of_year=current.isocalendar().week,
+                    is_weekend=current.weekday() >= 5,
+                )
+            )
+
+            current += timedelta(days=1)
+
+        df = self.spark.createDataFrame(rows)
+
+        (
+            df.writeTo("local.lakehouse.dim_date")
+            .using("iceberg")
+            .createOrReplace()
         )
-    )
 
-    current += timedelta(days=1)
+        print(f"Inserted {df.count()} dates.")
 
-df = spark.createDataFrame(rows)
+    def stop(self):
 
-(
-    df.writeTo("local.lakehouse.dim_date")
-    .using("iceberg")
-    .createOrReplace()
-)
+        self.spark.stop()
 
-print(f"Inserted {df.count()} dates.")
 
-spark.stop()
+def main():
+
+    generator = DateDimensionGenerator()
+
+    generator.generate()
+
+    generator.stop()
+
+
+if __name__ == "__main__":
+    main()

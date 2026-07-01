@@ -1,43 +1,60 @@
-from maintenance.health_metric import get_table_health
-from spark.manager import get_spark
-
-CATALOG = "local"
-DATABASE = "lakehouse"
+from maintenance.health_metric import HealthService
+from spark.manager import SparkManager
 
 
-def get_all_tables():
-    """
-    Returns all Iceberg tables inside local.lakehouse.
-    """
+class IcebergService:
 
-    spark = get_spark()
+    CATALOG = "local"
+    DATABASE = "lakehouse"
 
-    tables = spark.sql(f"SHOW TABLES IN {CATALOG}.{DATABASE}")
+    def __init__(self):
 
-    result = []
+        self.spark = SparkManager().get_spark()
+        self.health = HealthService(self.spark)
 
-    for row in tables.collect():
+    def get_all_tables(self):
+        """
+        Returns all Iceberg tables inside local.lakehouse.
+        """
 
-        table_name = row.tableName
+        tables = self.spark.sql(
+            f"SHOW TABLES IN {self.CATALOG}.{self.DATABASE}"
+        )
 
-        # Skip demo tables
-        if table_name.endswith("_demo"):
-            continue
+        result = []
 
-        full_table = f"{CATALOG}.{DATABASE}.{table_name}"
+        for row in tables.collect():
 
-        try:
-            health = get_table_health(spark, full_table)
+            table_name = row.tableName
 
-            result.append(
-                {
-                    "table_name": table_name,
-                    "full_name": full_table,
-                    "health": health,
-                }
+            # Skip demo tables
+            if table_name.endswith("_demo"):
+                continue
+
+            full_table = (
+                f"{self.CATALOG}."
+                f"{self.DATABASE}."
+                f"{table_name}"
             )
 
-        except Exception as e:
-            print(f"Skipping {table_name}: {e}")
+            try:
 
-    return result
+                health = self.health.get_table_health(
+                    full_table
+                )
+
+                result.append(
+                    {
+                        "table_name": table_name,
+                        "full_name": full_table,
+                        "health": health,
+                    }
+                )
+
+            except Exception as e:
+
+                print(
+                    f"Skipping {table_name}: {e}"
+                )
+
+        return result

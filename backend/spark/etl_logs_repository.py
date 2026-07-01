@@ -1,60 +1,57 @@
 from sqlalchemy import text
 
-from spark.database import engine
+from spark.database import DatabaseManager
 
 
-def log_etl_run(
-    pipeline_name,
-    start_time,
-    end_time,
-    status,
-    orders_processed,
-    order_items_processed,
-    message
-):
+class ETLRepository:
 
-    with engine.begin() as conn:
+    def __init__(self):
 
-        conn.execute(
+        self.engine = DatabaseManager().get_engine()
 
-            text("""
+    def log_etl_run(
+        self,
+        pipeline_name,
+        start_time,
+        end_time,
+        status,
+        orders_processed,
+        order_items_processed,
+        message,
+    ):
 
-            INSERT INTO etl_logs (
+        with self.engine.begin() as conn:
 
-                pipeline_name,
-                start_time,
-                end_time,
-                status,
-                orders_processed,
-                order_items_processed,
-                message
-
+            conn.execute(
+                text("""
+                    INSERT INTO etl_logs
+                    (
+                        pipeline_name,
+                        start_time,
+                        end_time,
+                        status,
+                        orders_processed,
+                        order_items_processed,
+                        message
+                    )
+                    VALUES
+                    (
+                        :pipeline,
+                        :start,
+                        :end,
+                        :status,
+                        :orders,
+                        :items,
+                        :message
+                    )
+                """),
+                {
+                    "pipeline": pipeline_name,
+                    "start": start_time,
+                    "end": end_time,
+                    "status": status,
+                    "orders": orders_processed,
+                    "items": order_items_processed,
+                    "message": message,
+                },
             )
-
-            VALUES (
-
-                :pipeline,
-                :start,
-                :end,
-                :status,
-                :orders,
-                :items,
-                :message
-
-            )
-
-            """),
-
-            {
-
-                "pipeline": pipeline_name,
-                "start": start_time,
-                "end": end_time,
-                "status": status,
-                "orders": orders_processed,
-                "items": order_items_processed,
-                "message": message
-
-            }
-
-        )

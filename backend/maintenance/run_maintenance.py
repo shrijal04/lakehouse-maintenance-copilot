@@ -9,12 +9,12 @@ BASE_DIR = os.path.abspath(
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "spark"))
 
-from spark.manager import get_spark
+from spark.manager import SparkManagerService
 
 from maintenance.health_metric import HealthService
 
 from app.services.maintenance_history_service import (
-    save_maintenance_job,
+    MaintenanceHistoryRepository
 )
 
 
@@ -24,12 +24,13 @@ TABLES = [
 ]
 
 
-class MaintenanceService:
+class Maintenance:
 
     def __init__(self, spark):
 
         self.spark = spark
         self.health_service = HealthService(spark)
+        self.repo=MaintenanceHistoryRepository()
 
     def maintain_table(self, table_name):
 
@@ -161,7 +162,7 @@ class MaintenanceService:
         # Save History
         # ==========================================
 
-        save_maintenance_job(
+        self.repo.save_maintenance_job(
             {
                 "table_name": table_name,
                 "status": "Success",
@@ -219,9 +220,9 @@ class MaintenanceService:
 
 def main():
 
-    spark = get_spark()
+    spark = SparkManagerService.get_spark()
 
-    maintenance_service = MaintenanceService(spark)
+    maintenance_service = Maintenance(spark)
 
     result = maintenance_service.run_maintenance()
 

@@ -4,11 +4,9 @@ from datetime import datetime
 from faker import Faker
 from sqlalchemy import text
 
-from generators.database import engine
+from generators.database import Database
 from generators.repository import (
-    get_customer_ids,
-    get_store_ids,
-    get_products,
+    Repository
 )
 from generators.config import ORDER_STATUS, PAYMENT_METHODS, CITIES
 
@@ -19,6 +17,8 @@ class OrderGenerator:
         self.fake = Faker()
         random.seed(seed)
         Faker.seed(seed)
+
+        self.repository= Repository()
 
         self.customers = None
         self.stores = None
@@ -33,7 +33,7 @@ class OrderGenerator:
 
         order_item_count = 0
 
-        with engine.begin() as conn:
+        with Database().get_engine().begin() as conn:
             for _ in range(order_count):
                 order_date = self.fake.date_time_between(
                     start_date="-180d",
@@ -54,7 +54,7 @@ class OrderGenerator:
 
         order_item_count = 0
 
-        with engine.begin() as conn:
+        with Database().get_engine().begin() as conn:
             for _ in range(order_count):
                 now = datetime.now()
 
@@ -69,9 +69,9 @@ class OrderGenerator:
     # -------------------------
 
     def _load_reference_data(self):
-        self.customers = get_customer_ids()
-        self.stores = get_store_ids()
-        self.products = get_products()
+        self.customers = self.repository.get_customer_ids()
+        self.stores = self.repository.get_store_ids()
+        self.products = self.repository.get_products()
 
     def _create_order(self, conn, order_date):
         """

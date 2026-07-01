@@ -8,7 +8,7 @@ BASE_DIR = os.path.abspath(
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "spark"))
 
-from spark.session import create_spark_session
+from spark.session import SparkManager
 
 
 class HealthService:
@@ -161,7 +161,7 @@ class HealthService:
 
 def main():
 
-    spark = create_spark_session()
+    spark = SparkManager().get_spark()
 
     health_service = HealthService(spark)
 

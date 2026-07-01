@@ -3,7 +3,7 @@ import random
 from faker import Faker
 from sqlalchemy import text
 
-from generators.database import database
+from generators.database import Database
 
 from generators.config import (
     CITIES,
@@ -20,7 +20,7 @@ class CustomerGenerator:
 
     def __init__(self):
 
-        self.engine = database.engine
+        self.engine = Database.get_engine()
 
     # -----------------------------------------
     # Generate One Customer
