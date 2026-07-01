@@ -9,6 +9,7 @@ from generators.config import (
     ORDER_STATUS,
     PAYMENT_METHODS,
     CITIES,
+    CUSTOMER_SEGMENTS
 )
 
 fake = Faker()

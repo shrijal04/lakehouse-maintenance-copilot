@@ -1,26 +1,42 @@
 from fastapi import APIRouter
 
 from app.schemas.health import HealthResponse
-from app.schemas.maintenance import ConfirmationResponse,MaintenanceConfirmation
+from app.schemas.maintenance import (
+    ConfirmationResponse,
+    MaintenanceConfirmation,
+)
+
 from app.services.maintenance_service import (
     get_orders_health,
+    get_order_items_health,
     get_orders_issues,
+    get_order_items_issues,
+    get_orders_health_history,
+    get_order_items_health_history,
     request_orders_maintenance,
     confirm_orders_maintenance,
 )
-from app.services.health_history_service import get_health_history
+
 from app.services.dashboard_service import get_dashboard_metrics
 
-TABLE = "local.lakehouse.orders"
 router = APIRouter(
     prefix="/lakehouse",
     tags=["Lakehouse"],
 )
 
+
+# =====================================================
+# Dashboard
+# =====================================================
+
 @router.get("/dashboard")
 def dashboard():
-
     return get_dashboard_metrics()
+
+
+# =====================================================
+# Orders Health
+# =====================================================
 
 @router.get(
     "/orders/health",
@@ -29,13 +45,42 @@ def dashboard():
 def orders_health():
     return get_orders_health()
 
+
 @router.get("/orders/issues")
 def orders_issues():
     return get_orders_issues()
 
+
 @router.get("/orders/history")
 def orders_history():
-    return get_health_history(TABLE)
+    return get_orders_health_history()
+
+
+# =====================================================
+# Order Items Health
+# =====================================================
+
+@router.get(
+    "/order-items/health",
+    response_model=HealthResponse,
+)
+def order_items_health():
+    return get_order_items_health()
+
+
+@router.get("/order-items/issues")
+def order_items_issues():
+    return get_order_items_issues()
+
+
+@router.get("/order-items/history")
+def order_items_history():
+    return get_order_items_health_history()
+
+
+# =====================================================
+# Maintenance
+# =====================================================
 
 @router.post(
     "/orders/maintenance/request",
@@ -46,7 +91,9 @@ def request_maintenance():
 
 
 @router.post("/orders/maintenance/confirm")
-def confirm_maintenance(request: MaintenanceConfirmation):
+def confirm_maintenance(
+    request: MaintenanceConfirmation,
+):
     return confirm_orders_maintenance(
         request.confirmation_id,
         request.confirm,

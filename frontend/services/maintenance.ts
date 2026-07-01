@@ -39,3 +39,18 @@ export async function confirmMaintenance(
 
   return response.json();
 }
+
+export async function simulateSmallFiles() {
+  const response = await fetch(
+    `${API}/etl/simulate-small-files`,
+    {
+      method: "POST",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to simulate small files.");
+  }
+
+  return response.json();
+}

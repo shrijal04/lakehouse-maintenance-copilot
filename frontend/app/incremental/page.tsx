@@ -9,6 +9,8 @@ import {
   getEtlHistory,
 } from "@/services/etl";
 
+import { simulateSmallFiles } from "@/services/maintenance";
+
 export default function IncrementalPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -16,6 +18,10 @@ export default function IncrementalPage() {
 
   const [showModal, setShowModal] = useState(false);
   const [simulating, setSimulating] = useState(false);
+
+  const [simulationType, setSimulationType] = useState<
+    "business" | "smallFiles"
+  >("business");
 
   // ==========================================
   // Load ETL History
@@ -78,6 +84,25 @@ export default function IncrementalPage() {
     }
   }
 
+  async function handleSmallFileSimulation() {
+    try {
+      setSimulating(true);
+
+      const data = await simulateSmallFiles();
+
+      alert(
+        `${data.batches_written} batches written.\nSmall files successfully created in the Iceberg table.`
+      );
+
+      setShowModal(false);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to simulate small files.");
+    } finally {
+      setSimulating(false);
+    }
+  }
+
   return (
     <AppLayout>
       <div className="space-y-10">
@@ -96,21 +121,35 @@ export default function IncrementalPage() {
 
           <div className="flex gap-4">
             <button
-              onClick={() => setShowModal(true)}
-              className="rounded-xl bg-amber-500 px-6 py-3 font-semibold text-black transition hover:bg-amber-400"
+              onClick={() => {
+                setSimulationType("business");
+                setShowModal(true);
+              }}
+              className="rounded-xl bg-amber-500 px-6 py-3 font-semibold text-black hover:bg-amber-400"
             >
               Simulate Business Day
             </button>
 
             <button
+              onClick={() => {
+                setSimulationType("smallFiles");
+                setShowModal(true);
+              }}
+              className="rounded-xl bg-red-500 px-6 py-3 font-semibold text-white hover:bg-red-400"
+            >
+              Simulate Small Files
+            </button>
+
+            <button
               onClick={handleRunIncremental}
               disabled={loading}
-              className="rounded-xl bg-cyan-500 px-6 py-3 font-semibold text-black transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:bg-slate-500"
+              className="rounded-xl bg-cyan-500 px-6 py-3 font-semibold text-black hover:bg-cyan-400 disabled:bg-slate-500"
             >
               {loading ? "Running..." : "Run Incremental Load"}
             </button>
-          </div>
+
         </div>
+        </div> 
 
         {/* Latest Result */}
 
@@ -222,20 +261,43 @@ export default function IncrementalPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
             <div className="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-8 shadow-2xl">
               <h2 className="text-2xl font-bold text-white">
-                Simulate Business Day
+                {simulationType === "business"
+                  ? "Simulate Business Day"
+                  : "Simulate Small Files"}
               </h2>
 
+              <p className="mt-4 text-slate-300">
+                {simulationType === "business"
+                  ? "This will generate new orders and update existing ones in PostgreSQL."
+                  : "This will intentionally create hundreds of tiny files in BOTH Iceberg fact tables to simulate a fragmented Lakehouse."}
+              </p>
 
               <div className="mt-6 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4">
-                <p className="text-amber-300">
-                  This does <strong>NOT</strong> update the Iceberg tables.
-                </p>
+                {simulationType === "business" ? (
+                <>
+                  <p className="text-amber-300">
+                    This does <strong>NOT</strong> update the Iceberg tables.
+                  </p>
 
-                <p className="mt-2 text-sm text-slate-400">
-                  After the simulation completes, click{" "}
-                  <strong>Run Incremental Load</strong> to ingest the newly
-                  generated data into the Lakehouse.
-                </p>
+                  <p className="mt-2 text-sm text-slate-400">
+                    After the simulation completes, run the Incremental Load to merge the
+                    new PostgreSQL data into Iceberg.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-red-300">
+                    This WILL intentionally create hundreds of tiny files in both Iceberg
+                    fact tables.
+                  </p>
+
+                  <p className="mt-2 text-sm text-slate-400">
+                    This action is only used to demonstrate Lakehouse fragmentation before
+                    running maintenance.
+                  </p>
+                </>
+              )}
+
               </div>
 
               <div className="mt-8 flex justify-end gap-4">
@@ -248,13 +310,19 @@ export default function IncrementalPage() {
                 </button>
 
                 <button
-                  onClick={handleSimulation}
+                  onClick={
+                    simulationType === "business"
+                      ? handleSimulation
+                      : handleSmallFileSimulation
+                  }
                   disabled={simulating}
                   className="rounded-xl bg-amber-500 px-5 py-2 font-semibold text-black hover:bg-amber-400 disabled:bg-slate-600"
                 >
                   {simulating
                     ? "Simulating..."
-                    : "Yes, Simulate"}
+                    : simulationType === "business"
+                    ? "Yes, Simulate Business Day"
+                    : "Yes, Create Small Files"}
                 </button>
               </div>
             </div>

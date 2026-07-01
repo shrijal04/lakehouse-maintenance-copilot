@@ -11,7 +11,8 @@ import {
   Tooltip,
 } from "recharts";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const API =
+  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 interface HealthHistory {
   day: string;
@@ -20,15 +21,22 @@ interface HealthHistory {
   average_file_kb: number;
 }
 
+type TableType = "orders" | "order_items";
+
 export default function HealthTrend() {
+  const [selectedTable, setSelectedTable] =
+    useState<TableType>("orders");
+
   const [history, setHistory] = useState<HealthHistory[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadHistory() {
       try {
+        setLoading(true);
+
         const response = await fetch(
-          `${API}/lakehouse/orders/history`
+          `${API}/lakehouse/${selectedTable}/history`
         );
 
         if (!response.ok) {
@@ -46,7 +54,7 @@ export default function HealthTrend() {
     }
 
     loadHistory();
-  }, []);
+  }, [selectedTable]);
 
   const chartData = history.map((item) => ({
     time: new Date(item.day).toLocaleDateString([], {
@@ -58,9 +66,22 @@ export default function HealthTrend() {
 
   return (
     <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
-      <h2 className="mb-6 text-2xl font-semibold text-white">
-        Health Trend
-      </h2>
+      <div className="mb-6 flex items-center justify-between">
+        <h2 className="text-2xl font-semibold text-white">
+          Health Trend
+        </h2>
+
+        <select
+          value={selectedTable}
+          onChange={(e) =>
+            setSelectedTable(e.target.value as TableType)
+          }
+          className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-white"
+        >
+          <option value="orders">Orders</option>
+          <option value="order_items">Order Items</option>
+        </select>
+      </div>
 
       {loading ? (
         <p className="text-slate-400">Loading...</p>

@@ -9,3 +9,15 @@ export async function getIssues() {
 
   return response.json();
 }
+
+export async function getOrderItemsIssues() {
+  const response = await fetch(
+    `${API}/lakehouse/order-items/issues`
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch order item issues");
+  }
+
+  return response.json();
+}

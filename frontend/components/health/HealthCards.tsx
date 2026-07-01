@@ -1,6 +1,5 @@
 "use client";
-import { TableHealth } from "@/types/health";
-import { HealthMetric } from "@/types/health";
+
 import { useEffect, useState } from "react";
 import {
   CheckCircle2,
@@ -9,7 +8,11 @@ import {
   Wrench,
 } from "lucide-react";
 
-import { getHealth } from "@/services/health";
+import { TableHealth, HealthMetric } from "@/types/health";
+import {
+  getHealth,
+  getOrderItemsHealth,
+} from "@/services/health";
 
 const icons = {
   green: CheckCircle2,
@@ -49,79 +52,119 @@ function storageColor(size: number) {
   return "red";
 }
 
-export default function HealthCards() {
-  
+function buildMetrics(health: TableHealth): HealthMetric[] {
+  return [
+    {
+      id: 1,
+      title: "Snapshots",
+      value: health.snapshot_count,
+      description: "Current snapshots",
+      color: snapshotColor(health.snapshot_count),
+    },
+    {
+      id: 2,
+      title: "Data Files",
+      value: health.data_file_count,
+      description: "Current data files",
+      color: dataFileColor(health.data_file_count),
+    },
+    {
+      id: 3,
+      title: "Average File KB",
+      value: health.average_file_kb,
+      description: "Average file size",
+      color: avgFileColor(health.average_file_kb),
+    },
+    {
+      id: 4,
+      title: "Total Size MB",
+      value: health.total_size_mb,
+      description: "Total storage",
+      color: storageColor(health.total_size_mb),
+    },
+  ];
+}
 
-  const [health, setHealth] = useState<TableHealth | null>(null);
+export default function HealthCards() {
+  const [ordersHealth, setOrdersHealth] =
+    useState<TableHealth | null>(null);
+
+  const [orderItemsHealth, setOrderItemsHealth] =
+    useState<TableHealth | null>(null);
 
   useEffect(() => {
-    getHealth().then(setHealth);
+    async function loadHealth() {
+      const [orders, items] = await Promise.all([
+        getHealth(),
+        getOrderItemsHealth(),
+      ]);
+
+      setOrdersHealth(orders);
+      setOrderItemsHealth(items);
+    }
+
+    loadHealth();
   }, []);
 
-  if (!health) {
+  if (!ordersHealth || !orderItemsHealth) {
     return <p className="text-slate-400">Loading...</p>;
   }
 
-const metrics: HealthMetric[] = [
-  {
-    id: 1,
-    title: "Snapshots",
-    value: health.snapshot_count,
-    description: "Current snapshots",
-    color: snapshotColor(health.snapshot_count),
-  },
-  {
-    id: 2,
-    title: "Data Files",
-    value: health.data_file_count,
-    description: "Current data files",
-    color: dataFileColor(health.data_file_count),
-  },
-  {
-    id: 3,
-    title: "Average File KB",
-    value: health.average_file_kb,
-    description: "Average file size",
-    color: avgFileColor(health.average_file_kb),
-  },
-  {
-    id: 4,
-    title: "Total Size MB",
-    value: health.total_size_mb,
-    description: "Total storage",
-    color: storageColor(health.total_size_mb),
-  },
-];
+  const sections = [
+    {
+      title: "Orders",
+      metrics: buildMetrics(ordersHealth),
+    },
+    {
+      title: "Order Items",
+      metrics: buildMetrics(orderItemsHealth),
+    },
+  ];
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-      {metrics.map((metric) => {
-        const Icon = icons[metric.color as keyof typeof icons];
+    <div className="space-y-10">
+      {sections.map((section) => (
+        <div key={section.title}>
+          <h2 className="mb-6 text-2xl font-bold text-white">
+            {section.title}
+          </h2>
 
-        return (
-          <div
-            key={metric.id}
-            className="rounded-2xl border border-slate-800 bg-slate-900 p-5 transition hover:border-cyan-500"
-          >
-            <Icon
-              className={colors[metric.color as keyof typeof colors]}
-              size={30}
-            />
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            {section.metrics.map((metric) => {
+              const Icon =
+                icons[metric.color as keyof typeof icons];
 
-            <h3 className="mt-5 text-lg font-semibold text-white">
-              {metric.title}
-            </h3>
+              return (
+                <div
+                  key={`${section.title}-${metric.id}`}
+                  className="rounded-2xl border border-slate-800 bg-slate-900 p-5 transition hover:border-cyan-500"
+                >
+                  <Icon
+                    className={
+                      colors[
+                        metric.color as keyof typeof colors
+                      ]
+                    }
+                    size={30}
+                  />
 
-            <p className="mt-4 text-4xl font-bold text-white">
-              {metric.value}
-            </p>
+                  <h3 className="mt-5 text-lg font-semibold text-white">
+                    {metric.title}
+                  </h3>
 
-            <p className="mt-2 text-slate-400">
-              {metric.description}
-            </p>
+                  <p className="mt-4 text-4xl font-bold text-white">
+                    {metric.value}
+                  </p>
+
+                  <p className="mt-2 text-slate-400">
+                    {metric.description}
+                  </p>
+                </div>
+              );
+            })}
           </div>
-        );
-      })}
+        </div>
+      ))}
     </div>
   );
 }

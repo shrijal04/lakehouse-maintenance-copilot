@@ -117,16 +117,23 @@ if __name__ == "__main__":
 
     spark = create_spark_session()
 
-    TABLE = "local.lakehouse.orders"
+    tables = [
+        "local.lakehouse.orders",
+        "local.lakehouse.order_items",
+    ]
 
-    metrics = get_table_health(spark, TABLE)
+    for table in tables:
 
-    print_table_health(metrics)
+        metrics = get_table_health(spark, table)
 
-    print("\nDetected Issues")
-    print("-" * 40)
+        print_table_health(metrics)
 
-    for issue in get_health_issues(metrics):
-        print(issue)
+        print("\nDetected Issues")
+        print("-" * 40)
+
+        for issue in get_health_issues(metrics):
+            print(issue)
+
+        print("\n" + "=" * 60 + "\n")
 
     spark.stop()

@@ -3,17 +3,32 @@
 import { useEffect, useState } from "react";
 import { HeartPulse } from "lucide-react";
 
-import { getHealth } from "@/services/health";
+import {
+  getHealth,
+  getOrderItemsHealth,
+} from "@/services/health";
+
 import { TableHealth } from "@/types/health";
 
 export default function HealthScore() {
-  const [health, setHealth] = useState<TableHealth | null>(null);
+  const [orders, setOrders] = useState<TableHealth | null>(null);
+  const [orderItems, setOrderItems] = useState<TableHealth | null>(null);
 
   useEffect(() => {
-    getHealth().then(setHealth);
+    async function load() {
+      const [ordersHealth, orderItemsHealth] = await Promise.all([
+        getHealth(),
+        getOrderItemsHealth(),
+      ]);
+
+      setOrders(ordersHealth);
+      setOrderItems(orderItemsHealth);
+    }
+
+    load();
   }, []);
 
-  if (!health) {
+  if (!orders || !orderItems) {
     return (
       <div className="rounded-3xl border border-slate-800 bg-slate-900 p-10 text-white">
         Loading...
@@ -21,25 +36,38 @@ export default function HealthScore() {
     );
   }
 
-  // ----------------------------
-  // Calculate Health Score
-  // ----------------------------
+  // ----------------------------------
+  // Combined Lakehouse Metrics
+  // ----------------------------------
+
+  const snapshotCount =
+    orders.snapshot_count + orderItems.snapshot_count;
+
+  const dataFileCount =
+    orders.data_file_count + orderItems.data_file_count;
+
+  const averageFileKB =
+    (orders.average_file_kb + orderItems.average_file_kb) / 2;
+
+  // ----------------------------------
+  // Health Score
+  // ----------------------------------
 
   let score = 100;
 
-  if (health.snapshot_count > 50) {
+  if (snapshotCount > 100) {
     score -= 30;
-  } else if (health.snapshot_count > 20) {
+  } else if (snapshotCount > 40) {
     score -= 15;
   }
 
-  if (health.average_file_kb < 64) {
+  if (averageFileKB < 64) {
     score -= 30;
-  } else if (health.average_file_kb < 128) {
+  } else if (averageFileKB < 128) {
     score -= 15;
   }
 
-  if (health.data_file_count > 20) {
+  if (dataFileCount > 40) {
     score -= 20;
   }
 
@@ -78,7 +106,7 @@ export default function HealthScore() {
         />
 
         <h2 className="text-2xl font-semibold text-white">
-          Overall Health
+          Overall Lakehouse Health
         </h2>
       </div>
 
