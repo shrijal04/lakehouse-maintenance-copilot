@@ -18,6 +18,7 @@ from app.services.maintenance_service import (
 )
 
 from app.services.dashboard_service import get_dashboard_metrics
+from app.services.iceberg_services import get_all_tables
 
 router = APIRouter(
     prefix="/lakehouse",
@@ -32,6 +33,10 @@ router = APIRouter(
 @router.get("/dashboard")
 def dashboard():
     return get_dashboard_metrics()
+
+@router.get("/tables")
+def iceberg_tables():
+    return get_all_tables()
 
 
 # =====================================================

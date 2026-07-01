@@ -1,7 +1,9 @@
-import { Search, Filter, Eye } from "lucide-react";
+"use client";
 
-import { icebergTables } from "@/data/iceberg";
+import { useEffect, useState } from "react";
+import { Search, Eye } from "lucide-react";
 
+import { getIcebergTables, IcebergTable as IcebergTableType } from "@/services/iceberg";
 import { TableName } from "@/types/iceberg";
 
 interface IcebergTableProps {
@@ -15,6 +17,30 @@ export default function IcebergTable({
   selectedTable,
   setSelectedTable,
 }: IcebergTableProps) {
+  const [tables, setTables] = useState<IcebergTableType[]>([]);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    getIcebergTables().then(setTables);
+  }, []);
+
+  const filteredTables = tables.filter((table) =>
+    table.table_name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  function getStatus(table: IcebergTableType) {
+    const health = table.health;
+
+    if (
+      health.average_file_kb < 128 ||
+      health.manifest_file_count > 100
+    ) {
+      return "Warning";
+    }
+
+    return "Healthy";
+  }
+
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
       <div className="mb-6 flex items-center justify-between">
@@ -22,23 +48,18 @@ export default function IcebergTable({
           Iceberg Tables
         </h2>
 
-        <div className="flex gap-3">
-          <div className="relative">
-            <Search
-              size={18}
-              className="absolute left-3 top-3 text-slate-500"
-            />
+        <div className="relative">
+          <Search
+            size={18}
+            className="absolute left-3 top-3 text-slate-500"
+          />
 
-            <input
-              placeholder="Search..."
-              className="rounded-xl border border-slate-700 bg-slate-950 py-2 pl-10 pr-4 text-white"
-            />
-          </div>
-
-          <button className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-white">
-            <Filter size={18} />
-            Filter
-          </button>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search tables..."
+            className="rounded-xl border border-slate-700 bg-slate-950 py-2 pl-10 pr-4 text-white"
+          />
         </div>
       </div>
 
@@ -56,53 +77,65 @@ export default function IcebergTable({
           </thead>
 
           <tbody>
-            {icebergTables.map((table) => (
-              <tr
-                key={table.id}
-                onClick={() => setSelectedTable(table.table)}
-                className={`cursor-pointer border-b border-slate-800 transition ${
-                  selectedTable === table.table
-                    ? "bg-cyan-500/10"
-                    : "hover:bg-slate-800/40"
-                }`}
-              >
-                <td className="py-5 font-medium text-white">
-                  {table.table}
-                </td>
+            {filteredTables.map((table) => {
+              const status = getStatus(table);
 
-                <td>{table.namespace}</td>
+              return (
+                <tr
+                  key={table.table_name}
+                  onClick={() =>
+                    setSelectedTable(table.table_name as TableName)
+                  }
+                  className={`cursor-pointer border-b border-slate-800 transition ${
+                    selectedTable === table.table_name
+                      ? "bg-cyan-500/10"
+                      : "hover:bg-slate-800/40"
+                  }`}
+                >
+                  <td className="py-5 font-medium text-white">
+                    {table.table_name}
+                  </td>
 
-                <td>{table.files}</td>
+                  <td className="text-slate-300">
+                    local.lakehouse
+                  </td>
 
-                <td>{table.size}</td>
+                  <td className="text-white">
+                    {table.health.data_file_count}
+                  </td>
 
-                <td>
-                  <span
-                    className={`rounded-full px-3 py-1 text-sm ${
-                      table.status === "Healthy"
-                        ? "bg-green-500/20 text-green-400"
-                        : table.status === "Warning"
-                        ? "bg-yellow-500/20 text-yellow-400"
-                        : "bg-red-500/20 text-red-400"
-                    }`}
-                  >
-                    {table.status}
-                  </span>
-                </td>
+                  <td className="text-white">
+                    {table.health.total_size_mb.toFixed(2)} MB
+                  </td>
 
-                <td className="text-center">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedTable(table.table);
-                    }}
-                    className="rounded-lg bg-cyan-500/10 p-2 text-cyan-400 hover:bg-cyan-500 hover:text-black"
-                  >
-                    <Eye size={18} />
-                  </button>
-                </td>
-              </tr>
-            ))}
+                  <td>
+                    <span
+                      className={`rounded-full px-3 py-1 text-sm ${
+                        status === "Healthy"
+                          ? "bg-green-500/20 text-green-400"
+                          : "bg-yellow-500/20 text-yellow-400"
+                      }`}
+                    >
+                      {status}
+                    </span>
+                  </td>
+
+                  <td className="text-center">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedTable(
+                          table.table_name as TableName
+                        );
+                      }}
+                      className="rounded-lg bg-cyan-500/10 p-2 text-cyan-400 hover:bg-cyan-500 hover:text-black"
+                    >
+                      <Eye size={18} />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

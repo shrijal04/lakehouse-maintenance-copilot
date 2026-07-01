@@ -1,7 +1,10 @@
 export type TableName =
-  | "sales_orders"
-  | "customer_dim"
-  | "inventory";
+  | "orders"
+  | "order_items"
+  | "customers"
+  | "products"
+  | "stores"
+  | "dim_date";
 
 export interface IcebergTableData {
   id: number;
