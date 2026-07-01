@@ -14,7 +14,7 @@ import {
 const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 interface HealthHistory {
-  checked_at: string;
+  day: string;
   snapshot_count: number;
   data_file_count: number;
   average_file_kb: number;
@@ -49,9 +49,9 @@ export default function HealthTrend() {
   }, []);
 
   const chartData = history.map((item) => ({
-    time: new Date(item.checked_at).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
+    time: new Date(item.day).toLocaleDateString([], {
+      month: "short",
+      day: "numeric",
     }),
     files: item.data_file_count,
   }));

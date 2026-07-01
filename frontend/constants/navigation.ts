@@ -14,8 +14,8 @@ export const navigation = [
     icon: LayoutDashboard,
   },
   {
-    title: "Pipeline",
-    href: "/pipeline",
+    title: "Incremental Load",
+    href: "/incremental",
     icon: Workflow,
   },
   {
