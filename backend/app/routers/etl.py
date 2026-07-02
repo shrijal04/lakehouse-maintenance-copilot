@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from pydantic import BaseModel
 from sqlalchemy import text
 
 from app.database import engine
@@ -6,6 +7,16 @@ from app.database import engine
 from spark.incremental_load import IncrementalETL
 from spark.simulate_small_files import SmallFileSimulator
 from generators.simulate_day import BusinessDaySimulator
+
+
+# ---------------------------------------------------
+# Request Models
+# ---------------------------------------------------
+
+class SmallFileRequest(BaseModel):
+    database: str
+    target: str
+    batches: int = 100
 
 
 router = APIRouter(
@@ -56,8 +67,12 @@ def simulate():
 
 
 @router.post("/simulate-small-files")
-def simulate_small_files():
+def simulate_small_files(request: SmallFileRequest):
 
     simulator = SmallFileSimulator()
 
-    return simulator.run()
+    return simulator.run(
+        database=request.database,
+        target=request.target,
+        batches=request.batches,
+    )

@@ -40,11 +40,19 @@ export async function confirmMaintenance(
   return response.json();
 }
 
-export async function simulateSmallFiles() {
+export async function simulateSmallFiles(payload: {
+  database: string;
+  target: "orders" | "order_items" | "both";
+  batches: number;
+}) {
   const response = await fetch(
     `${API}/etl/simulate-small-files`,
     {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
     }
   );
 

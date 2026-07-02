@@ -23,6 +23,13 @@ export default function IncrementalPage() {
     "business" | "smallFiles"
   >("business");
 
+  const [database, setDatabase] = useState("lakehouse");
+
+  const [tableTarget, setTableTarget] = useState<
+    "orders" | "order_items" | "both"
+  >("both");
+
+  const [batches, setBatches] = useState(100);
   // ==========================================
   // Load ETL History
   // ==========================================
@@ -88,7 +95,11 @@ export default function IncrementalPage() {
     try {
       setSimulating(true);
 
-      const data = await simulateSmallFiles();
+      const data = await simulateSmallFiles({
+        database,
+        target: tableTarget,
+        batches,
+      });
 
       alert(
         `${data.batches_written} batches written.\nSmall files successfully created in the Iceberg table.`
@@ -287,14 +298,84 @@ export default function IncrementalPage() {
               ) : (
                 <>
                   <p className="text-red-300">
-                    This WILL intentionally create hundreds of tiny files in both Iceberg
-                    fact tables.
+                    This will intentionally create many small files in the selected Iceberg
+                    table(s).
                   </p>
 
                   <p className="mt-2 text-sm text-slate-400">
-                    This action is only used to demonstrate Lakehouse fragmentation before
-                    running maintenance.
+                    Choose which database and table(s) to simulate.
                   </p>
+
+                  {/* Database */}
+
+                  <div className="mt-6">
+                    <label className="mb-2 block text-white">
+                      Database
+                    </label>
+
+                    <select
+                      value={database}
+                      onChange={(e) => setDatabase(e.target.value)}
+                      className="w-full rounded-lg border border-slate-700 bg-slate-800 p-3 text-white"
+                    >
+                      <option value="lakehouse">
+                        lakehouse
+                      </option>
+
+                      {/* Add more databases later */}
+                    </select>
+                  </div>
+
+                  {/* Table */}
+
+                  <div className="mt-4">
+                    <label className="mb-2 block text-white">
+                      Table
+                    </label>
+
+                    <select
+                      value={tableTarget}
+                      onChange={(e) =>
+                        setTableTarget(
+                          e.target.value as
+                            | "orders"
+                            | "order_items"
+                            | "both"
+                        )
+                      }
+                      className="w-full rounded-lg border border-slate-700 bg-slate-800 p-3 text-white"
+                    >
+                      <option value="orders">
+                        Orders
+                      </option>
+
+                      <option value="order_items">
+                        Order Items
+                      </option>
+
+                      <option value="both">
+                        Both
+                      </option>
+                    </select>
+                  </div>
+
+                  {/* Batches */}
+
+                  <div className="mt-4">
+                    <label className="mb-2 block text-white">
+                      Number of batches
+                    </label>
+
+                    <input
+                      type="number"
+                      min={1}
+                      value={batches}
+                      onChange={(e) =>
+                        setBatches(Number(e.target.value))
+                      }
+                      className="w-full rounded-lg border border-slate-700 bg-slate-800 p-3 text-white"
+                    />
+                  </div>
                 </>
               )}
 

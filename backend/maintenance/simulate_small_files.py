@@ -20,13 +20,13 @@ class SmallFileGenerator:
 
     def configure_spark(self):
 
-        # Disable adaptive merging
+        # Disable adaptive execution
         self.spark.conf.set(
             "spark.sql.adaptive.enabled",
             "false",
         )
 
-        # Force one partition
+        # Force one output partition
         self.spark.conf.set(
             "spark.sql.shuffle.partitions",
             "1",
@@ -38,7 +38,10 @@ class SmallFileGenerator:
 
         for i in range(batches):
 
-            print(f"Writing batch {i + 1}/{batches}")
+            print(
+                f"Writing batch {i + 1}/{batches} "
+                f"into {self.table_name}"
+            )
 
             (
                 self.spark.table(self.table_name)
@@ -47,17 +50,51 @@ class SmallFileGenerator:
                 .append()
             )
 
-        print("\nFinished creating small files.")
+        print(f"\nFinished creating small files for {self.table_name}")
 
 
-def main():
+def get_tables(catalog, database, target):
+    """
+    Returns the list of tables to simulate.
+    """
+
+    base = f"{catalog}.{database}"
+
+    mapping = {
+        "orders": [
+            f"{base}.orders",
+        ],
+        "order_items": [
+            f"{base}.order_items",
+        ],
+        "both": [
+            f"{base}.orders",
+            f"{base}.order_items",
+        ],
+    }
+
+    return mapping.get(target.lower(), [])
+
+
+def simulate_small_files(
+    catalog,
+    database,
+    target,
+    batches=100,
+):
 
     spark = SparkManager.get_spark()
 
-    tables = [
-        "local.lakehouse.orders",
-        "local.lakehouse.order_items",
-    ]
+    tables = get_tables(
+        catalog=catalog,
+        database=database,
+        target=target,
+    )
+
+    if not tables:
+        raise ValueError(
+            "target must be 'orders', 'order_items', or 'both'"
+        )
 
     for table in tables:
 
@@ -70,9 +107,21 @@ def main():
             table_name=table,
         )
 
-        generator.generate()
+        generator.generate(
+            batches=batches
+        )
 
     spark.stop()
+
+
+def main():
+
+    simulate_small_files(
+        catalog="local",
+        database="lakehouse",
+        target="both",
+        batches=100,
+    )
 
 
 if __name__ == "__main__":
