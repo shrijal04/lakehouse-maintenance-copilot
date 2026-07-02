@@ -1,18 +1,20 @@
 # 🏔️ Lakehouse Maintenance Copilot
 
-An AI-powered Lakehouse Maintenance Copilot that monitors Apache Iceberg table health, detects lakehouse degradation, and performs controlled maintenance using an AI assistant.
+An AI-powered Lakehouse Maintenance Copilot that monitors Apache Iceberg table health, detects lakehouse degradation, visualizes maintenance metrics, and assists users with an AI-powered maintenance assistant.
 
 ---
 
 # Project Overview
 
-This project simulates a real-world retail company's data platform.
+This project simulates a real-world retail company's modern data platform.
 
 A PostgreSQL OLTP database acts as the operational system where customers place orders.
 
-Apache Spark incrementally ingests this transactional data into Apache Iceberg tables, forming a lakehouse.
+Apache Spark incrementally ingests this transactional data into Apache Iceberg tables, creating a Lakehouse architecture. Repeated incremental loads intentionally generate many small data files to simulate real production environments.
 
-Over time, many small ingestion batches intentionally create the **small-file problem**. An AI Copilot monitors lakehouse health, reports degradation, and executes maintenance only after explicit user confirmation.
+The system continuously monitors Iceberg table health by collecting metrics such as snapshot count, manifest files, file counts, and storage size. These metrics are exposed through a FastAPI backend and visualized in a Next.js dashboard.
+
+An AI-powered Copilot assists users by answering questions related to Apache Iceberg and lakehouse maintenance. (RAG integration with live lakehouse metrics is the next milestone.)
 
 ---
 
@@ -32,14 +34,15 @@ Over time, many small ingestion batches intentionally create the **small-file pr
 
 ## AI
 
-- Claude Agent SDK
-- Anthropic API
+- Groq API
+- Llama 3.3 70B Versatile
 
 ## Frontend
 
 - Next.js
 - React
 - Tailwind CSS
+- Recharts
 
 ---
 
@@ -49,10 +52,12 @@ Over time, many small ingestion batches intentionally create the **small-file pr
 lakehouse-maintenance-copilot/
 
 ├── backend/
+│   ├── app/
 │   ├── generators/
 │   ├── spark/
-│   ├── app/
-│   └── requirements.txt
+│   ├── maintenance/
+│   ├── requirements.txt
+│   └── .env
 │
 ├── frontend/
 │
@@ -63,9 +68,13 @@ lakehouse-maintenance-copilot/
 
 ---
 
-# Phase 1 — PostgreSQL Source System ✅
+# Project Milestones
 
-The first phase builds a realistic retail OLTP database.
+---
+
+# ✅ Milestone 1 — PostgreSQL Source System
+
+Built a realistic retail OLTP database.
 
 ## Database Schema
 
@@ -82,103 +91,25 @@ Fact Tables
 - Orders
 - Order Items
 
-The schema is normalized using foreign key relationships to mimic a production transactional database.
+The schema is fully normalized using foreign key relationships to mimic a production transactional database.
 
 ---
 
-# Data Generation Process
+## Synthetic Data Generation
 
-Instead of manually inserting rows, the entire dataset is generated automatically using Python and Faker.
+The entire dataset is automatically generated using Python and Faker.
 
-## Step 1
-
-Seed master data.
-
-Tables populated:
+Generated tables include:
 
 - Categories
 - Brands
 - Stores
+- Products
+- Customers
+- Orders
+- Order Items
 
-These tables are relatively static and rarely change.
-
----
-
-## Step 2
-
-Generate Products.
-
-Each product contains:
-
-- Product Name
-- Category
-- Brand
-- Price
-- Stock Quantity
-- Supplier
-- Created Date
-- Updated Date
-
-50 products are generated.
-
----
-
-## Step 3
-
-Generate Customers.
-
-Each customer includes:
-
-- Name
-- Email
-- Phone Number
-- City
-- Country
-- Customer Segment
-- Created Date
-
-100 customers are generated.
-
----
-
-## Step 4
-
-Generate Orders.
-
-For every order:
-
-- Select a random customer.
-- Select a random store.
-- Generate an order date.
-- Select a payment method.
-- Assign an order status.
-- Generate between 1 and 5 unique products.
-
----
-
-## Step 5
-
-Generate Order Items.
-
-Each order item includes:
-
-- Product
-- Quantity
-- Unit Price
-- Discount
-- Line Total
-
-The order total is calculated as:
-
-```
-Order Total = SUM(Line Totals)
-```
-
-ensuring referential and financial consistency.
-
----
-
-# Generated Dataset
+Dataset Size
 
 | Table | Records |
 |--------|---------:|
@@ -192,15 +123,123 @@ ensuring referential and financial consistency.
 
 ---
 
-# Running the Data Generator
+# ✅ Milestone 2 — Apache Iceberg Lakehouse
 
-Create the backend environment.
+Built an Apache Iceberg Lakehouse using Apache Spark.
+
+Implemented:
+
+- Spark Session
+- Iceberg Catalog
+- Initial ETL
+- Incremental Data Loading
+- Snapshot Creation
+- Iceberg Table Management
+
+Tables Created
+
+- Orders
+- Order Items
+
+Repeated incremental ingestion intentionally creates multiple snapshots and metadata growth to simulate real-world lakehouse degradation.
+
+---
+
+# ✅ Milestone 3 — Lakehouse Health Monitoring
+
+Implemented health monitoring for Iceberg tables.
+
+Health metrics include:
+
+- Snapshot Count
+- Data File Count
+- Average File Size
+- Total Table Size
+- Manifest File Count
+- Orphan File Count
+
+Each maintenance run stores these metrics in PostgreSQL, allowing historical tracking of table health over time.
+
+---
+
+# ✅ Milestone 4 — FastAPI Backend
+
+Built a REST API for exposing lakehouse information.
+
+Implemented endpoints:
+
+### Health APIs
+
+- `/lakehouse/orders/health`
+- `/lakehouse/order-items/health`
+
+### History APIs
+
+- `/lakehouse/orders/history`
+- `/lakehouse/order-items/history`
+
+The backend connects Spark, PostgreSQL, and Iceberg to provide real-time health information.
+
+---
+
+# ✅ Milestone 5 — Dashboard
+
+Built an interactive dashboard using Next.js.
+
+Features include:
+
+- Overall lakehouse overview
+- Orders table health
+- Order Items table health
+- Historical health trends
+- Interactive charts
+- Responsive UI
+- Dark theme interface
+
+---
+
+# ✅ Milestone 6 — AI Copilot (Initial Integration)
+
+Integrated an AI assistant using Groq and Llama 3.3.
+
+Current capabilities:
+
+- Answers questions about Apache Iceberg
+- Explains Spark concepts
+- Explains lakehouse architecture
+- Provides maintenance best practices
+- Supports Markdown-formatted responses
+
+At this stage, the AI is functioning as a general technical assistant.
+
+⚠️ **RAG (Retrieval-Augmented Generation) has not yet been implemented.**
+
+Currently, the Copilot does **not** access your project's live lakehouse metrics or database.
+
+The current milestone only verifies that:
+
+- Backend AI API works
+- Frontend chat interface works
+- Groq integration is successful
+- End-to-end communication between frontend and backend is functional
+
+The next milestone will provide the AI with real-time context from your Iceberg tables before generating responses.
+
+---
+
+# Running the Project
+
+## Backend
+
+Create a virtual environment.
 
 ```bash
 cd backend
 
 python -m venv .venv
 ```
+
+Activate it.
 
 Windows
 
@@ -214,7 +253,7 @@ Install dependencies.
 pip install -r requirements.txt
 ```
 
-Create a `.env` file inside `backend/`.
+Create a `.env` file.
 
 Example:
 
@@ -225,13 +264,25 @@ POSTGRES_DB=lakehouse_db
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=your_password
 
-ANTHROPIC_API_KEY=your_api_key
+GROQ_API_KEY=your_api_key
 ```
 
-Generate the dataset.
+Start FastAPI.
 
 ```bash
-python generators/generate_dataset.py
+uvicorn app.main:app --reload
+```
+
+---
+
+## Frontend
+
+```bash
+cd frontend
+
+npm install
+
+npm run dev
 ```
 
 ---
@@ -240,39 +291,45 @@ python generators/generate_dataset.py
 
 ## ✅ Completed
 
-- PostgreSQL database design
-- Normalized schema
-- SQLAlchemy connection
-- Master data generator
-- Product generator
-- Customer generator
-- Order generator
-- Repository layer
-- Configuration management
-- Frontend Design
+- PostgreSQL Source System
+- Synthetic Dataset Generator
+- Apache Spark Setup
+- Apache Iceberg Setup
+- Initial ETL
+- Incremental Loads
+- Iceberg Health Monitoring
+- Health History Storage
+- FastAPI Backend
+- REST APIs
+- Dashboard UI
+- Health Trend Charts
+- AI Copilot Integration (Groq)
 
 ---
 
 ## 🚧 In Progress
 
-- Apache Spark setup
-- Apache Iceberg setup
-- Initial ETL
-- Incremental Load
+- Retrieval-Augmented Generation (RAG)
+- AI access to live Iceberg metrics
+- AI-powered maintenance recommendations
+- Maintenance execution workflow
+- Table compaction automation
+- Snapshot expiration
+- Orphan file cleanup
 
 ---
 
-# Upcoming Features
+# Future Enhancements
 
-- Incremental Merge/Upsert
-- Small File Simulation
-- Lakehouse Health Metrics
-- Snapshot Management
-- Data File Compaction
-- FastAPI Backend
-- Claude AI Agent
-- React Dashboard
-- AI Maintenance Copilot
+- Context-aware AI responses
+- Automatic maintenance recommendations
+- Query optimization suggestions
+- Table compaction execution
+- Snapshot expiration controls
+- Orphan file detection
+- Maintenance audit logs
+- Multi-table monitoring
+- Role-based maintenance approval
 
 ---
 
@@ -280,4 +337,4 @@ python generators/generate_dataset.py
 
 **Shrijal Sthapit**
 
-Lakehouse Maintenance Copilot – Bootcamp Capstone Project
+Bootcamp Capstone Project — Lakehouse Maintenance Copilot
