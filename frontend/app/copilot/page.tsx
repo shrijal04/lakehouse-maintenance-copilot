@@ -25,6 +25,10 @@ export default function CopilotPage() {
   const sendMessage = async (text: string) => {
     if (!text.trim()) return;
 
+    // -----------------------------------------
+    // Create User Message
+    // -----------------------------------------
+
     const newMessage: ChatMessageType = {
       id: Date.now(),
       sender: "user",
@@ -35,56 +39,111 @@ export default function CopilotPage() {
       }),
     };
 
-    setMessages((prev) => [...prev, newMessage]);
+    // -----------------------------------------
+    // Build Updated Conversation
+    // -----------------------------------------
+
+    const updatedMessages = [
+      ...messages,
+      newMessage,
+    ];
+
+    // Update UI immediately
+
+    setMessages(updatedMessages);
 
     setIsThinking(true);
 
     try {
+      // -----------------------------------------
+      // Send only last 10 messages
+      // -----------------------------------------
+
+      const recentMessages =
+        updatedMessages.slice(-10);
+
       const response = await fetch(
         `${API}/copilot/chat`,
         {
           method: "POST",
+
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
+
           body: JSON.stringify({
-            question: text,
+            messages: recentMessages.map(
+              (message) => ({
+                role:
+                  message.sender ===
+                  "assistant"
+                    ? "assistant"
+                    : "user",
+
+                content: message.message,
+              })
+            ),
           }),
         }
       );
 
       if (!response.ok) {
-        throw new Error("Failed to get AI response");
+        throw new Error(
+          "Failed to get AI response"
+        );
       }
 
       const data = await response.json();
 
       const aiMessage: ChatMessageType = {
         id: Date.now() + 1,
+
         sender: "assistant",
+
         message: data.answer,
-        time: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
+
+        time: new Date().toLocaleTimeString(
+          [],
+          {
+            hour: "2-digit",
+            minute: "2-digit",
+          }
+        ),
       };
 
-      setMessages((prev) => [...prev, aiMessage]);
+      // -----------------------------------------
+      // Add AI Response
+      // -----------------------------------------
+
+      setMessages((prev) => [
+        ...prev,
+        aiMessage,
+      ]);
     } catch (error) {
       console.error(error);
 
       const errorMessage: ChatMessageType = {
         id: Date.now() + 1,
+
         sender: "assistant",
+
         message:
           "Sorry, I couldn't connect to the AI service. Please try again.",
-        time: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
+
+        time: new Date().toLocaleTimeString(
+          [],
+          {
+            hour: "2-digit",
+            minute: "2-digit",
+          }
+        ),
       };
 
-      setMessages((prev) => [...prev, errorMessage]);
+      setMessages((prev) => [
+        ...prev,
+        errorMessage,
+      ]);
     } finally {
       setIsThinking(false);
     }
@@ -94,28 +153,33 @@ export default function CopilotPage() {
     <AppLayout>
       <div className="mx-auto max-w-6xl space-y-8">
         {/* Header */}
+
         <div>
           <h1 className="text-4xl font-bold text-white">
             Lakehouse Maintenance Copilot
           </h1>
 
           <p className="mt-2 text-slate-400">
-            Ask anything about your Iceberg lakehouse.
+            Ask anything about your Iceberg
+            lakehouse.
           </p>
         </div>
 
         {/* Chat Window */}
+
         <ChatWindow
           messages={messages}
           isThinking={isThinking}
         />
 
         {/* Suggested Prompts */}
+
         <SuggestedPrompts
           onSelect={sendMessage}
         />
 
         {/* Chat Input */}
+
         <ChatInput
           onSend={sendMessage}
         />

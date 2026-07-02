@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { HardDrive, Database } from "lucide-react";
 
 import { getHealth } from "@/services/health";
@@ -12,10 +12,7 @@ export default function StorageMetadata() {
   useEffect(() => {
     async function load() {
       try {
-        const data = await getHealth(
-          "lakehouse",
-          "both"
-        );
+        const data = await getHealth("lakehouse", "both");
 
         if (Array.isArray(data)) {
           setTables(data);
@@ -45,17 +42,12 @@ export default function StorageMetadata() {
           .split(".")
           .pop()!
           .replace("_", " ")
-          .replace(/\b\w/g, (c: string) =>
-            c.toUpperCase()
-          );
+          .replace(/\b\w/g, (c: string) => c.toUpperCase());
 
         return (
-          <>
+          <Fragment key={table.table}>
             {/* Storage */}
-            <div
-              key={`${table.table}-storage`}
-              className="rounded-3xl border border-slate-800 bg-slate-900 p-6"
-            >
+            <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
               <div className="mb-5 flex items-center gap-3">
                 <HardDrive className="text-cyan-400" />
 
@@ -89,10 +81,7 @@ export default function StorageMetadata() {
             </div>
 
             {/* Metadata */}
-            <div
-              key={`${table.table}-metadata`}
-              className="rounded-3xl border border-slate-800 bg-slate-900 p-6"
-            >
+            <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
               <div className="mb-5 flex items-center gap-3">
                 <Database className="text-cyan-400" />
 
@@ -124,7 +113,7 @@ export default function StorageMetadata() {
                 </p>
               </div>
             </div>
-          </>
+          </Fragment>
         );
       })}
     </div>
