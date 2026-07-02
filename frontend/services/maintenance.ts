@@ -1,10 +1,21 @@
 const API = "http://127.0.0.1:8000";
 
-export async function requestMaintenance() {
+// =====================================================
+// Request Maintenance
+// =====================================================
+
+export async function requestMaintenance(payload: {
+  database: string;
+  target: "orders" | "order_items" | "both";
+}) {
   const response = await fetch(
-    `${API}/lakehouse/orders/maintenance/request`,
+    `${API}/lakehouse/maintenance/request`,
     {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
     }
   );
 
@@ -15,12 +26,18 @@ export async function requestMaintenance() {
   return response.json();
 }
 
+// =====================================================
+// Confirm Maintenance
+// =====================================================
+
 export async function confirmMaintenance(
   confirmationId: string,
-  confirm: boolean
+  confirm: boolean,
+  database: string,
+  target: "orders" | "order_items" | "both"
 ) {
   const response = await fetch(
-    `${API}/lakehouse/orders/maintenance/confirm`,
+    `${API}/lakehouse/maintenance/confirm`,
     {
       method: "POST",
       headers: {
@@ -29,6 +46,8 @@ export async function confirmMaintenance(
       body: JSON.stringify({
         confirmation_id: confirmationId,
         confirm,
+        database,
+        target,
       }),
     }
   );
@@ -39,6 +58,10 @@ export async function confirmMaintenance(
 
   return response.json();
 }
+
+// =====================================================
+// Simulate Small Files
+// =====================================================
 
 export async function simulateSmallFiles(payload: {
   database: string;

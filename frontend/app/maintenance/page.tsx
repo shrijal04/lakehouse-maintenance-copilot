@@ -1,12 +1,12 @@
-import AppLayout from "@/components/layout/appLayout";
+"use client";
 
+import AppLayout from "@/components/layout/appLayout";
 import MaintenanceCard from "@/components/maintenance/MaintenanceCard";
 
 export default function MaintenancePage() {
   return (
     <AppLayout>
       <div className="space-y-10">
-        {/* Header */}
         <div>
           <h1 className="text-4xl font-bold text-white">
             Lakehouse Maintenance

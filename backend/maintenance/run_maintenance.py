@@ -9,19 +9,12 @@ BASE_DIR = os.path.abspath(
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "spark"))
 
+from maintenance.health_metric import HealthService
 from spark.manager import SparkManagerService
 
-from maintenance.health_metric import HealthService
-
 from app.services.maintenance_history_service import (
-    MaintenanceHistoryRepository
+    MaintenanceHistoryRepository,
 )
-
-
-TABLES = [
-    "local.lakehouse.orders",
-    "local.lakehouse.order_items",
-]
 
 
 class Maintenance:
@@ -30,7 +23,46 @@ class Maintenance:
 
         self.spark = spark
         self.health_service = HealthService(spark)
-        self.repo=MaintenanceHistoryRepository()
+        self.repo = MaintenanceHistoryRepository()
+
+    # --------------------------------------------------
+    # Build selected tables
+    # --------------------------------------------------
+
+    def get_tables(
+        self,
+        catalog: str,
+        database: str,
+        target: str,
+    ):
+
+        base = f"{catalog}.{database}"
+
+        mapping = {
+            "orders": [
+                f"{base}.orders",
+            ],
+            "order_items": [
+                f"{base}.order_items",
+            ],
+            "both": [
+                f"{base}.orders",
+                f"{base}.order_items",
+            ],
+        }
+
+        tables = mapping.get(target.lower())
+
+        if tables is None:
+            raise ValueError(
+                "target must be 'orders', 'order_items' or 'both'"
+            )
+
+        return tables
+
+    # --------------------------------------------------
+    # Maintain one table
+    # --------------------------------------------------
 
     def maintain_table(self, table_name):
 
@@ -128,57 +160,25 @@ class Maintenance:
         print("\nAfter Maintenance\n")
         self.health_service.print_table_health(after)
 
-        # ==========================================
-        # Summary
-        # ==========================================
-
-        print("\n" + "=" * 60)
-        print(f"Maintenance Summary : {table_name}")
-        print("=" * 60)
-
-        print(
-            f"Snapshots   : {before['snapshot_count']} -> {after['snapshot_count']}"
-        )
-
-        print(
-            f"Data Files  : {before['data_file_count']} -> {after['data_file_count']}"
-        )
-
-        print(
-            f"Avg File KB : {before['average_file_kb']} -> {after['average_file_kb']}"
-        )
-
-        print(
-            f"Total Size  : {before['total_size_mb']} MB -> {after['total_size_mb']} MB"
-        )
-
         end_time = datetime.now()
 
         duration = int(
             (end_time - start_time).total_seconds()
         )
 
-        # ==========================================
-        # Save History
-        # ==========================================
-
         self.repo.save_maintenance_job(
             {
                 "table_name": table_name,
                 "status": "Success",
                 "duration_seconds": duration,
-
                 "files_rewritten": rewrite.rewritten_data_files_count,
                 "files_added": rewrite.added_data_files_count,
                 "bytes_rewritten": rewrite.rewritten_bytes_count,
-
                 "manifests_rewritten": manifest.rewritten_manifests_count,
                 "manifests_added": manifest.added_manifests_count,
-
                 "snapshots_deleted": expire.deleted_data_files_count,
                 "manifest_files_deleted": expire.deleted_manifest_files_count,
                 "manifest_lists_deleted": expire.deleted_manifest_lists_count,
-
                 "orphan_files_removed": orphan_files_removed,
             }
         )
@@ -202,11 +202,26 @@ class Maintenance:
             "after": after,
         }
 
-    def run_maintenance(self):
+    # --------------------------------------------------
+    # Run Maintenance
+    # --------------------------------------------------
+
+    def run_maintenance(
+        self,
+        database: str,
+        target: str,
+        catalog: str = "local",
+    ):
+
+        tables = self.get_tables(
+            catalog=catalog,
+            database=database,
+            target=target,
+        )
 
         results = []
 
-        for table in TABLES:
+        for table in tables:
 
             results.append(
                 self.maintain_table(table)
@@ -214,19 +229,26 @@ class Maintenance:
 
         return {
             "status": "Success",
+            "database": database,
+            "target": target,
             "tables": results,
         }
 
 
 def main():
 
-    spark = SparkManagerService.get_spark()
+    spark = SparkManagerService().get_spark()
 
-    maintenance_service = Maintenance(spark)
+    maintenance = Maintenance(spark)
 
-    result = maintenance_service.run_maintenance()
+    result = maintenance.run_maintenance(
+        database="lakehouse",
+        target="both",
+    )
 
     print(result)
+
+    spark.stop()
 
 
 if __name__ == "__main__":

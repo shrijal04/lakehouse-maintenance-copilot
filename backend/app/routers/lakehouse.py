@@ -4,6 +4,7 @@ from app.schemas.health import HealthResponse
 from app.schemas.maintenance import (
     ConfirmationResponse,
     MaintenanceConfirmation,
+    MaintenanceRequest,
 )
 
 from app.services.dashboard_service import DashboardService
@@ -84,18 +85,27 @@ def order_items_history():
 # =====================================================
 
 @router.post(
-    "/orders/maintenance/request",
+    "/maintenance/request",
     response_model=ConfirmationResponse,
 )
-def request_maintenance():
-    return maintenance_service.request_orders_maintenance()
+def request_maintenance(
+    request: MaintenanceRequest,
+):
+
+    return maintenance_service.request_orders_maintenance(
+        database=request.database,
+        target=request.target,
+    )
 
 
-@router.post("/orders/maintenance/confirm")
+@router.post("/maintenance/confirm")
 def confirm_maintenance(
     request: MaintenanceConfirmation,
 ):
+
     return maintenance_service.confirm_orders_maintenance(
-        request.confirmation_id,
-        request.confirm,
+        confirmation_id=request.confirmation_id,
+        confirm=request.confirm,
+        database=request.database,
+        target=request.target,
     )

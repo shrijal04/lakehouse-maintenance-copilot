@@ -80,22 +80,27 @@ class MaintenanceService:
     # Request Maintenance
     # ---------------------------------------------------
 
-    def request_orders_maintenance(self):
+    def request_orders_maintenance(
+        self,
+        database: str,
+        target: str,
+    ):
 
         confirmation_id = self.confirmation.create_confirmation()
 
         return {
             "confirmation_required": True,
             "confirmation_id": confirmation_id,
+            "database": database,
+            "target": target,
             "message": (
                 "Running maintenance will:\n"
                 "- Rewrite small data files\n"
                 "- Rewrite manifest files\n"
                 "- Expire old snapshots\n"
                 "- Remove orphan files\n\n"
-                "Maintenance will run on BOTH fact tables:\n"
-                "- local.lakehouse.orders\n"
-                "- local.lakehouse.order_items\n\n"
+                f"Selected database : {database}\n"
+                f"Selected table(s) : {target}\n\n"
                 "Do you want to continue?"
             ),
         }
@@ -108,6 +113,8 @@ class MaintenanceService:
         self,
         confirmation_id: str,
         confirm: bool,
+        database: str,
+        target: str,
     ):
 
         if not confirm:
@@ -128,7 +135,10 @@ class MaintenanceService:
             confirmation_id
         )
 
-        result = self.maintenance_runner.run_maintenance()
+        result = self.maintenance_runner.run_maintenance(
+            database=database,
+            target=target,
+        )
 
         return {
             "status": "success",
