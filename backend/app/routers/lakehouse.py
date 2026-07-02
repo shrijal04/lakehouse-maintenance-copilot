@@ -1,6 +1,11 @@
-from fastapi import APIRouter
+from typing import List
 
-from app.schemas.health import HealthResponse
+from fastapi import APIRouter, Query
+
+from app.schemas.health import (
+    HealthResponse,
+    HealthIssue,
+)
 from app.schemas.maintenance import (
     ConfirmationResponse,
     MaintenanceConfirmation,
@@ -37,47 +42,54 @@ def iceberg_tables():
 
 
 # =====================================================
-# Orders Health
+# Generic Health
 # =====================================================
 
 @router.get(
-    "/orders/health",
-    response_model=HealthResponse,
+    "/health",
+    response_model=List[HealthResponse],
 )
-def orders_health():
-    return maintenance_service.get_orders_health()
-
-
-@router.get("/orders/issues")
-def orders_issues():
-    return maintenance_service.get_orders_issues()
-
-
-@router.get("/orders/history")
-def orders_history():
-    return maintenance_service.get_orders_health_history()
+def table_health(
+    database: str = Query(...),
+    target: str = Query(...),
+):
+    return maintenance_service.get_table_health(
+        database=database,
+        target=target,
+    )
 
 
 # =====================================================
-# Order Items Health
+# Generic Issues
 # =====================================================
 
 @router.get(
-    "/order-items/health",
-    response_model=HealthResponse,
+    "/issues",
+    response_model=List[HealthIssue],
 )
-def order_items_health():
-    return maintenance_service.get_order_items_health()
+def table_issues(
+    database: str = Query(...),
+    target: str = Query(...),
+):
+    return maintenance_service.get_table_issues(
+        database=database,
+        target=target,
+    )
 
 
-@router.get("/order-items/issues")
-def order_items_issues():
-    return maintenance_service.get_order_items_issues()
+# =====================================================
+# Generic History
+# =====================================================
 
-
-@router.get("/order-items/history")
-def order_items_history():
-    return maintenance_service.get_order_items_health_history()
+@router.get("/history")
+def table_history(
+    database: str = Query(...),
+    target: str = Query(...),
+):
+    return maintenance_service.get_table_health_history(
+        database=database,
+        target=target,
+    )
 
 
 # =====================================================
@@ -91,7 +103,6 @@ def order_items_history():
 def request_maintenance(
     request: MaintenanceRequest,
 ):
-
     return maintenance_service.request_orders_maintenance(
         database=request.database,
         target=request.target,
@@ -102,7 +113,6 @@ def request_maintenance(
 def confirm_maintenance(
     request: MaintenanceConfirmation,
 ):
-
     return maintenance_service.confirm_orders_maintenance(
         confirmation_id=request.confirmation_id,
         confirm=request.confirm,

@@ -9,11 +9,6 @@ from app.services.confirmation_service import ConfirmationManager
 
 class MaintenanceService:
 
-    TABLES = {
-        "orders": "local.lakehouse.orders",
-        "order_items": "local.lakehouse.order_items",
-    }
-
     def __init__(self):
 
         self.spark = SparkManager().get_spark()
@@ -23,58 +18,151 @@ class MaintenanceService:
         self.confirmation = ConfirmationManager()
 
     # ---------------------------------------------------
+    # Helpers
+    # ---------------------------------------------------
+
+    def get_table_name(
+        self,
+        database: str,
+        target: str,
+    ):
+        return f"local.{database}.{target}"
+
+    # ---------------------------------------------------
     # Health
     # ---------------------------------------------------
 
-    def get_table_health(self, table_key: str):
+    def get_table_health(
+        self,
+        database: str,
+        target: str,
+    ):
 
-        table_name = self.TABLES[table_key]
+        # Return health for both tables
+        if target == "both":
+
+            results = []
+
+            for table in ["orders", "order_items"]:
+
+                table_name = self.get_table_name(
+                    database,
+                    table,
+                )
+
+                metrics = self.health.get_table_health(
+                    table_name,
+                )
+
+                self.health_repository.save_health_metrics(
+                    metrics
+                )
+
+                results.append(metrics)
+
+            return results
+
+        # Return health for one table
+
+        table_name = self.get_table_name(
+            database,
+            target,
+        )
 
         metrics = self.health.get_table_health(
             table_name,
         )
 
-        self.health_repository.save_health_metrics(metrics)
+        self.health_repository.save_health_metrics(
+            metrics
+        )
 
         return metrics
-
-    def get_orders_health(self):
-        return self.get_table_health("orders")
-
-    def get_order_items_health(self):
-        return self.get_table_health("order_items")
 
     # ---------------------------------------------------
     # Health History
     # ---------------------------------------------------
 
-    def get_orders_health_history(self):
-        return self.health_repository.get_health_history(
-            self.TABLES["orders"]
+    def get_table_health_history(
+        self,
+        database: str,
+        target: str,
+    ):
+
+        if target == "both":
+
+            return {
+                "orders": self.health_repository.get_health_history(
+                    self.get_table_name(
+                        database,
+                        "orders",
+                    )
+                ),
+                "order_items": self.health_repository.get_health_history(
+                    self.get_table_name(
+                        database,
+                        "order_items",
+                    )
+                ),
+            }
+
+        table_name = self.get_table_name(
+            database,
+            target,
         )
 
-    def get_order_items_health_history(self):
         return self.health_repository.get_health_history(
-            self.TABLES["order_items"]
+            table_name
         )
 
     # ---------------------------------------------------
     # Issues
     # ---------------------------------------------------
 
-    def get_table_issues(self, table_key: str):
+    def get_table_issues(
+        self,
+        database: str,
+        target: str,
+    ):
 
-        metrics = self.health.get_table_health(
-            self.TABLES[table_key],
+        if target == "both":
+
+            results = []
+
+            for table in ["orders", "order_items"]:
+
+                table_name = self.get_table_name(
+                    database,
+                    table,
+                )
+
+                metrics = self.health.get_table_health(
+                    table_name,
+                )
+
+                results.append(
+                    {
+                        "table": table,
+                        "issues": self.health.get_health_issues(
+                            metrics
+                        ),
+                    }
+                )
+
+            return results
+
+        table_name = self.get_table_name(
+            database,
+            target,
         )
 
-        return self.health.get_health_issues(metrics)
+        metrics = self.health.get_table_health(
+            table_name,
+        )
 
-    def get_orders_issues(self):
-        return self.get_table_issues("orders")
-
-    def get_order_items_issues(self):
-        return self.get_table_issues("order_items")
+        return self.health.get_health_issues(
+            metrics
+        )
 
     # ---------------------------------------------------
     # Request Maintenance
@@ -86,7 +174,9 @@ class MaintenanceService:
         target: str,
     ):
 
-        confirmation_id = self.confirmation.create_confirmation()
+        confirmation_id = (
+            self.confirmation.create_confirmation()
+        )
 
         return {
             "confirmation_required": True,
@@ -99,8 +189,8 @@ class MaintenanceService:
                 "- Rewrite manifest files\n"
                 "- Expire old snapshots\n"
                 "- Remove orphan files\n\n"
-                f"Selected database : {database}\n"
-                f"Selected table(s) : {target}\n\n"
+                f"Database : {database}\n"
+                f"Target : {target}\n\n"
                 "Do you want to continue?"
             ),
         }

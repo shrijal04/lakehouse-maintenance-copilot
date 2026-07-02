@@ -3,32 +3,34 @@
 import { useEffect, useState } from "react";
 import { HeartPulse } from "lucide-react";
 
-import {
-  getHealth,
-  getOrderItemsHealth,
-} from "@/services/health";
-
+import { getHealth } from "@/services/health";
 import { TableHealth } from "@/types/health";
 
 export default function HealthScore() {
-  const [orders, setOrders] = useState<TableHealth | null>(null);
-  const [orderItems, setOrderItems] = useState<TableHealth | null>(null);
+  const [tables, setTables] = useState<TableHealth[]>([]);
 
   useEffect(() => {
     async function load() {
-      const [ordersHealth, orderItemsHealth] = await Promise.all([
-        getHealth(),
-        getOrderItemsHealth(),
-      ]);
+      try {
+        const data = await getHealth(
+          "lakehouse",
+          "both"
+        );
 
-      setOrders(ordersHealth);
-      setOrderItems(orderItemsHealth);
+        if (Array.isArray(data)) {
+          setTables(data);
+        } else {
+          setTables([data]);
+        }
+      } catch (err) {
+        console.error(err);
+      }
     }
 
     load();
   }, []);
 
-  if (!orders || !orderItems) {
+  if (tables.length === 0) {
     return (
       <div className="rounded-3xl border border-slate-800 bg-slate-900 p-10 text-white">
         Loading...
@@ -37,17 +39,24 @@ export default function HealthScore() {
   }
 
   // ----------------------------------
-  // Combined Lakehouse Metrics
+  // Combined Metrics
   // ----------------------------------
 
-  const snapshotCount =
-    orders.snapshot_count + orderItems.snapshot_count;
+  const snapshotCount = tables.reduce(
+    (sum, table) => sum + table.snapshot_count,
+    0
+  );
 
-  const dataFileCount =
-    orders.data_file_count + orderItems.data_file_count;
+  const dataFileCount = tables.reduce(
+    (sum, table) => sum + table.data_file_count,
+    0
+  );
 
   const averageFileKB =
-    (orders.average_file_kb + orderItems.average_file_kb) / 2;
+    tables.reduce(
+      (sum, table) => sum + table.average_file_kb,
+      0
+    ) / tables.length;
 
   // ----------------------------------
   // Health Score
@@ -145,7 +154,9 @@ export default function HealthScore() {
               {score}%
             </p>
 
-            <p className={`mt-2 text-lg font-medium ${statusColor}`}>
+            <p
+              className={`mt-2 text-lg font-medium ${statusColor}`}
+            >
               {status}
             </p>
           </div>

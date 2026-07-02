@@ -16,22 +16,24 @@ export default function MaintenanceCard() {
 
   const [open, setOpen] = useState(false);
 
-  const [confirmationId, setConfirmationId] = useState("");
+  const [confirmationId, setConfirmationId] =
+    useState("");
 
   const [message, setMessage] = useState("");
 
   // -----------------------------------------
-  // New State
+  // Selected Database & Table
   // -----------------------------------------
 
-  const [database, setDatabase] = useState("lakehouse");
+  const [database, setDatabase] =
+    useState("lakehouse");
 
   const [target, setTarget] = useState<
     "orders" | "order_items" | "both"
   >("both");
 
   // -----------------------------------------
-  // Step 1: Request Maintenance
+  // Step 1 - Request Maintenance
   // -----------------------------------------
 
   async function runMaintenance() {
@@ -57,7 +59,7 @@ export default function MaintenanceCard() {
   }
 
   // -----------------------------------------
-  // Step 2: Confirm Maintenance
+  // Step 2 - Confirm Maintenance
   // -----------------------------------------
 
   async function handleConfirm() {
@@ -71,10 +73,33 @@ export default function MaintenanceCard() {
         target
       );
 
-      setResult(
-        response.message ??
-          "Maintenance completed successfully."
-      );
+      if (response.status === "success") {
+        const tables = response.result.tables;
+
+        const summary = tables
+          .map(
+            (table: any) => `
+Table: ${table.table}
+
+Snapshots:
+${table.before.snapshot_count} → ${table.after.snapshot_count}
+
+Data Files:
+${table.before.data_file_count} → ${table.after.data_file_count}
+
+Average File Size (KB):
+${table.before.average_file_kb} → ${table.after.average_file_kb}
+
+Total Size (MB):
+${table.before.total_size_mb} → ${table.after.total_size_mb}
+`
+          )
+          .join("\n---------------------------------\n");
+
+        setResult(summary);
+      } else {
+        setResult(response.message);
+      }
 
       setOpen(false);
     } catch (error) {
@@ -96,12 +121,14 @@ export default function MaintenanceCard() {
   return (
     <>
       <div className="rounded-3xl border border-slate-800 bg-slate-900 p-8">
+
         <h2 className="text-2xl font-semibold text-white">
           Run Maintenance
         </h2>
 
         <p className="mt-3 text-slate-400">
-          Running maintenance will optimize your Apache Iceberg table by:
+          Running maintenance will optimize the selected
+          Apache Iceberg table(s) by:
         </p>
 
         <ul className="mt-6 list-disc space-y-2 pl-6 text-slate-300">
@@ -120,10 +147,14 @@ export default function MaintenanceCard() {
 
           <select
             value={database}
-            onChange={(e) => setDatabase(e.target.value)}
+            onChange={(e) =>
+              setDatabase(e.target.value)
+            }
             className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white"
           >
-            <option value="lakehouse">lakehouse</option>
+            <option value="lakehouse">
+              lakehouse
+            </option>
           </select>
         </div>
 
@@ -146,7 +177,9 @@ export default function MaintenanceCard() {
             }
             className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white"
           >
-            <option value="orders">Orders</option>
+            <option value="orders">
+              Orders
+            </option>
 
             <option value="order_items">
               Order Items
@@ -158,16 +191,22 @@ export default function MaintenanceCard() {
           </select>
         </div>
 
+        {/* Run Button */}
+
         <button
           onClick={runMaintenance}
           disabled={loading}
           className="mt-8 rounded-xl bg-cyan-600 px-6 py-3 font-semibold text-white hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? "Running..." : "Run Maintenance"}
+          {loading
+            ? "Running..."
+            : "Run Maintenance"}
         </button>
 
+        {/* Result */}
+
         {result && (
-          <div className="mt-6 rounded-xl bg-slate-800 p-4 text-white">
+          <div className="mt-6 whitespace-pre-wrap rounded-xl bg-slate-800 p-5 text-sm text-white">
             {result}
           </div>
         )}

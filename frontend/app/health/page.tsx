@@ -6,8 +6,6 @@ import HealthTrend from "@/components/health/HealthTrend";
 import StorageMetadata from "@/components/health/StoreMetadata";
 import IssuesTable from "@/components/health/IssuesTable";
 
-
-
 export default function HealthPage() {
   return (
     <AppLayout>
@@ -23,31 +21,35 @@ export default function HealthPage() {
           </p>
         </div>
 
+        {/* Overall Health Score */}
         <HealthScore />
 
+        {/* Health Metrics */}
         <HealthCards />
 
+        {/* Orders Trend */}
         <HealthTrend
-            table="orders"
-            title="Orders File Count Trend"
+          database="lakehouse"
+          table="orders"
+          title="Orders File Count Trend"
         />
 
+        {/* Order Items Trend */}
         <HealthTrend
-            table="order-items"
-            title="Order Items File Count Trend"
+          database="lakehouse"
+          table="order_items"
+          title="Order Items File Count Trend"
         />
 
+        {/* Storage & Metadata */}
         <StorageMetadata />
 
-        {/* Issues + Resources */}
+        {/* Active Issues */}
         <div className="grid gap-8 lg:grid-cols-12">
-          <div className="lg:col-span-8">
+          <div className="lg:col-span-12">
             <IssuesTable />
           </div>
-
-
         </div>
-
       </div>
     </AppLayout>
   );

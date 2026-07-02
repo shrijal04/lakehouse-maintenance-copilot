@@ -12,7 +12,8 @@ import {
 } from "recharts";
 
 const API =
-  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://127.0.0.1:8000";
 
 interface HealthHistory {
   run: number;
@@ -26,15 +27,20 @@ interface HealthHistory {
 }
 
 interface Props {
-  table: "orders" | "order-items";
+  database: string;
+  table: "orders" | "order_items";
   title: string;
 }
 
 export default function HealthTrend({
+  database,
   table,
   title,
 }: Props) {
-  const [history, setHistory] = useState<HealthHistory[]>([]);
+  const [history, setHistory] = useState<
+    HealthHistory[]
+  >([]);
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,8 +49,12 @@ export default function HealthTrend({
         setLoading(true);
 
         const response = await fetch(
-          `${API}/lakehouse/${table}/history`
+          `${API}/lakehouse/history?database=${database}&target=${table}`
         );
+
+        if (!response.ok) {
+          throw new Error("Failed to load history");
+        }
 
         const data = await response.json();
 
@@ -57,11 +67,12 @@ export default function HealthTrend({
     }
 
     loadHistory();
-  }, [table]);
+  }, [database, table]);
 
   const chartData = history.map((item) => ({
     run: `Run ${item.run}`,
     files: item.data_file_count,
+    snapshots: item.snapshot_count,
   }));
 
   return (
@@ -71,10 +82,15 @@ export default function HealthTrend({
       </h2>
 
       {loading ? (
-        <p className="text-slate-400">Loading...</p>
+        <p className="text-slate-400">
+          Loading...
+        </p>
       ) : (
         <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer
+            width="100%"
+            height="100%"
+          >
             <LineChart data={chartData}>
               <CartesianGrid stroke="#334155" />
 
@@ -90,8 +106,18 @@ export default function HealthTrend({
               <Line
                 type="monotone"
                 dataKey="files"
+                name="Data Files"
                 stroke="#06b6d4"
-                strokeWidth={4}
+                strokeWidth={3}
+                dot={{ r: 5 }}
+              />
+
+              <Line
+                type="monotone"
+                dataKey="snapshots"
+                name="Snapshots"
+                stroke="#22c55e"
+                strokeWidth={3}
                 dot={{ r: 5 }}
               />
             </LineChart>
