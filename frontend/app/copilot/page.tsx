@@ -11,6 +11,10 @@ import SuggestedPrompts from "@/components/copilot/SuggestedPrompt";
 import { initialMessages } from "@/data/copilot";
 import { ChatMessageType } from "@/types/chat";
 
+const API =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://127.0.0.1:8000";
+
 export default function CopilotPage() {
   const [messages, setMessages] =
     useState<ChatMessageType[]>(initialMessages);
@@ -18,7 +22,7 @@ export default function CopilotPage() {
   const [isThinking, setIsThinking] =
     useState(false);
 
-  const sendMessage = (text: string) => {
+  const sendMessage = async (text: string) => {
     if (!text.trim()) return;
 
     const newMessage: ChatMessageType = {
@@ -35,12 +39,30 @@ export default function CopilotPage() {
 
     setIsThinking(true);
 
-    setTimeout(() => {
+    try {
+      const response = await fetch(
+        `${API}/copilot/chat`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            question: text,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to get AI response");
+      }
+
+      const data = await response.json();
+
       const aiMessage: ChatMessageType = {
         id: Date.now() + 1,
         sender: "assistant",
-        message:
-          "This is a mock AI response. Later this will come from FastAPI + OpenAI.",
+        message: data.answer,
         time: new Date().toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
@@ -48,9 +70,24 @@ export default function CopilotPage() {
       };
 
       setMessages((prev) => [...prev, aiMessage]);
+    } catch (error) {
+      console.error(error);
 
+      const errorMessage: ChatMessageType = {
+        id: Date.now() + 1,
+        sender: "assistant",
+        message:
+          "Sorry, I couldn't connect to the AI service. Please try again.",
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsThinking(false);
-    }, 1500);
+    }
   };
 
   return (

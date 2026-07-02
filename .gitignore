@@ -96,3 +96,4 @@ htmlcov/
 *.sqlite3
 
 backend/maintenance/trial.py
+backend/test_gemini.py
