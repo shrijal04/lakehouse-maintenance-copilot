@@ -70,7 +70,7 @@ class HealthRepository:
                         manifest_file_count,
                         orphan_file_count
                     FROM lakehouse_health_history
-                    WHERE table_name = :table_nameLAKE
+                    WHERE table_name = :table_name
                     ORDER BY recorded_at ASC
                 """),
                 {
