@@ -103,7 +103,7 @@ def table_history(
 def request_maintenance(
     request: MaintenanceRequest,
 ):
-    return maintenance_service.request_orders_maintenance(
+    return maintenance_service.request_maintenance(
         database=request.database,
         target=request.target,
     )
@@ -113,7 +113,7 @@ def request_maintenance(
 def confirm_maintenance(
     request: MaintenanceConfirmation,
 ):
-    return maintenance_service.confirm_orders_maintenance(
+    return maintenance_service.confirm_maintenance(
         confirmation_id=request.confirmation_id,
         confirm=request.confirm,
         database=request.database,

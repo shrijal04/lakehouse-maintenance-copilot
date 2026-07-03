@@ -16,7 +16,7 @@ export default function AppLayout({
       <div className="flex flex-1 flex-col">
         <Navbar />
 
-        <main className="flex-1 p-8">
+        <main className="flex-1 px-6 py-5 overflow-hidden">
           {children}
         </main>
       </div>

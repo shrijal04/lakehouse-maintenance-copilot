@@ -3,9 +3,16 @@ from app.tools.tool_registry import ToolRegistry
 
 class ToolService:
     """
-    Decides whether the AI should use
-    backend tools or answer directly
-    using the LLM.
+    Determines whether a user's question requires
+    backend tools or can be answered directly
+    by the LLM.
+
+    Responsibilities:
+    - Decide if a tool should be used.
+    - Detect which tool to execute.
+    - Detect the target table.
+    - Detect the target database.
+    - Execute the appropriate tool.
     """
 
     def __init__(self):
@@ -17,7 +24,7 @@ class ToolService:
         self.registry = ToolRegistry()
 
         # -----------------------------------------
-        # Keywords that require live data
+        # Keywords that indicate live data is needed
         # -----------------------------------------
 
         self.tool_keywords = [
@@ -83,13 +90,17 @@ class ToolService:
         ]
 
     # =====================================================
-    # Should use a tool?
+    # Should use a backend tool?
     # =====================================================
 
     def should_use_tool(
         self,
         question: str,
     ) -> bool:
+        """
+        Return True if the user's question
+        requires live backend data.
+        """
 
         question = question.lower()
 
@@ -99,13 +110,17 @@ class ToolService:
         )
 
     # =====================================================
-    # Detect which tool
+    # Detect Tool
     # =====================================================
 
     def detect_tool(
         self,
         question: str,
     ) -> str:
+        """
+        Determine which backend tool should
+        handle the user's request.
+        """
 
         q = question.lower()
 
@@ -149,13 +164,17 @@ class ToolService:
         return "llm"
 
     # =====================================================
-    # Detect table
+    # Detect Table
     # =====================================================
 
     def detect_table(
         self,
         question: str,
     ) -> str:
+        """
+        Determine which Iceberg table
+        the user is referring to.
+        """
 
         q = question.lower()
 
@@ -176,16 +195,21 @@ class ToolService:
         return "both"
 
     # =====================================================
-    # Detect database
+    # Detect Database
     # =====================================================
 
     def detect_database(
         self,
         question: str,
     ) -> str:
+        """
+        Determine which database/catalog
+        should be queried.
 
-        # Future:
-        # Detect the correct catalog/database
+        Currently always returns the default
+        lakehouse database.
+        """
+
         return "lakehouse"
 
     # =====================================================
@@ -196,6 +220,9 @@ class ToolService:
         self,
         question: str,
     ):
+        """
+        Execute the detected backend tool.
+        """
 
         tool_name = self.detect_tool(question)
 
@@ -203,12 +230,14 @@ class ToolService:
 
         table = self.detect_table(question)
 
-        tool = self.registry.get_tool(tool_name)
+        tool_instance = self.registry.get_tool(
+            tool_name
+        )
 
-        if tool is None:
+        if tool_instance is None:
             return None
 
-        return tool.execute(
+        return tool_instance.execute(
             database=database,
             table=table,
         )

@@ -1,19 +1,19 @@
 export const suggestedPrompts = [
   {
     id: 1,
-    text: "Show unhealthy tables",
+    text: "Give overview of order tables",
   },
   {
     id: 2,
-    text: "Optimize inventory table",
+    text: "Run maintenance on both table.",
   },
   {
     id: 3,
-    text: "Explain last pipeline failure",
+    text: "How is the health of table orders",
   },
   {
     id: 4,
-    text: "Show storage usage",
+    text: "Give me health overview of both table with health score",
   },
   {
     id: 5,

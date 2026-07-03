@@ -11,6 +11,14 @@ class IssuesTool(BaseTool):
     def __init__(self):
         self.maintenance_service = MaintenanceService()
 
+    @property
+    def name(self):
+        return "issues"
+
+    @property
+    def description(self):
+        return "Returns health issues for Iceberg tables."
+
     def execute(
         self,
         database: str,

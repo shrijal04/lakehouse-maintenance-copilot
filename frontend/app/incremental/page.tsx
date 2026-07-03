@@ -119,7 +119,7 @@ export default function IncrementalPage() {
       <div className="space-y-10">
         {/* Header */}
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-4xl font-bold text-white">
               Incremental Load
@@ -130,7 +130,7 @@ export default function IncrementalPage() {
             </p>
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-4">
             <button
               onClick={() => {
                 setSimulationType("business");
@@ -158,9 +158,8 @@ export default function IncrementalPage() {
             >
               {loading ? "Running..." : "Run Incremental Load"}
             </button>
-
+          </div>
         </div>
-        </div> 
 
         {/* Latest Result */}
 
@@ -269,119 +268,123 @@ export default function IncrementalPage() {
         {/* Confirmation Modal */}
 
         {showModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-            <div className="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-8 shadow-2xl">
-              <h2 className="text-2xl font-bold text-white">
-                {simulationType === "business"
-                  ? "Simulate Business Day"
-                  : "Simulate Small Files"}
-              </h2>
+          <div
+            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 sm:items-center"
+            onClick={(e) => {
+              // close when clicking the backdrop only
+              if (e.target === e.currentTarget && !simulating) {
+                setShowModal(false);
+              }
+            }}
+          >
+            <div className="my-8 flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
+              {/* Scrollable content area */}
+              <div className="overflow-y-auto p-6 sm:p-8">
+                <h2 className="text-xl font-bold text-white sm:text-2xl">
+                  {simulationType === "business"
+                    ? "Simulate Business Day"
+                    : "Simulate Small Files"}
+                </h2>
 
-              <p className="mt-4 text-slate-300">
-                {simulationType === "business"
-                  ? "This will generate new orders and update existing ones in PostgreSQL."
-                  : "This will intentionally create hundreds of tiny files in BOTH Iceberg fact tables to simulate a fragmented Lakehouse."}
-              </p>
+                <p className="mt-4 text-sm text-slate-300 sm:text-base">
+                  {simulationType === "business"
+                    ? "This will generate new orders and update existing ones in PostgreSQL."
+                    : "This will intentionally create hundreds of tiny files in BOTH Iceberg fact tables to simulate a fragmented Lakehouse."}
+                </p>
 
-              <div className="mt-6 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4">
-                {simulationType === "business" ? (
-                <>
-                  <p className="text-amber-300">
-                    This does <strong>NOT</strong> update the Iceberg tables.
-                  </p>
+                <div className="mt-6 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4">
+                  {simulationType === "business" ? (
+                    <>
+                      <p className="text-amber-300">
+                        This does <strong>NOT</strong> update the Iceberg
+                        tables.
+                      </p>
 
-                  <p className="mt-2 text-sm text-slate-400">
-                    After the simulation completes, run the Incremental Load to merge the
-                    new PostgreSQL data into Iceberg.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="text-red-300">
-                    This will intentionally create many small files in the selected Iceberg
-                    table(s).
-                  </p>
+                      <p className="mt-2 text-sm text-slate-400">
+                        After the simulation completes, run the Incremental
+                        Load to merge the new PostgreSQL data into Iceberg.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-red-300">
+                        This will intentionally create many small files in
+                        the selected Iceberg table(s).
+                      </p>
 
-                  <p className="mt-2 text-sm text-slate-400">
-                    Choose which database and table(s) to simulate.
-                  </p>
+                      <p className="mt-2 text-sm text-slate-400">
+                        Choose which database and table(s) to simulate.
+                      </p>
 
-                  {/* Database */}
+                      {/* Database */}
 
-                  <div className="mt-6">
-                    <label className="mb-2 block text-white">
-                      Database
-                    </label>
+                      <div className="mt-6">
+                        <label className="mb-2 block text-white">
+                          Database
+                        </label>
 
-                    <select
-                      value={database}
-                      onChange={(e) => setDatabase(e.target.value)}
-                      className="w-full rounded-lg border border-slate-700 bg-slate-800 p-3 text-white"
-                    >
-                      <option value="lakehouse">
-                        lakehouse
-                      </option>
+                        <select
+                          value={database}
+                          onChange={(e) => setDatabase(e.target.value)}
+                          className="w-full rounded-lg border border-slate-700 bg-slate-800 p-3 text-white"
+                        >
+                          <option value="lakehouse">lakehouse</option>
 
-                      {/* Add more databases later */}
-                    </select>
-                  </div>
+                          {/* Add more databases later */}
+                        </select>
+                      </div>
 
-                  {/* Table */}
+                      {/* Table */}
 
-                  <div className="mt-4">
-                    <label className="mb-2 block text-white">
-                      Table
-                    </label>
+                      <div className="mt-4">
+                        <label className="mb-2 block text-white">
+                          Table
+                        </label>
 
-                    <select
-                      value={tableTarget}
-                      onChange={(e) =>
-                        setTableTarget(
-                          e.target.value as
-                            | "orders"
-                            | "order_items"
-                            | "both"
-                        )
-                      }
-                      className="w-full rounded-lg border border-slate-700 bg-slate-800 p-3 text-white"
-                    >
-                      <option value="orders">
-                        Orders
-                      </option>
+                        <select
+                          value={tableTarget}
+                          onChange={(e) =>
+                            setTableTarget(
+                              e.target.value as
+                                | "orders"
+                                | "order_items"
+                                | "both"
+                            )
+                          }
+                          className="w-full rounded-lg border border-slate-700 bg-slate-800 p-3 text-white"
+                        >
+                          <option value="orders">Orders</option>
 
-                      <option value="order_items">
-                        Order Items
-                      </option>
+                          <option value="order_items">Order Items</option>
 
-                      <option value="both">
-                        Both
-                      </option>
-                    </select>
-                  </div>
+                          <option value="both">Both</option>
+                        </select>
+                      </div>
 
-                  {/* Batches */}
+                      {/* Batches */}
 
-                  <div className="mt-4">
-                    <label className="mb-2 block text-white">
-                      Number of batches
-                    </label>
+                      <div className="mt-4">
+                        <label className="mb-2 block text-white">
+                          Number of batches
+                        </label>
 
-                    <input
-                      type="number"
-                      min={1}
-                      value={batches}
-                      onChange={(e) =>
-                        setBatches(Number(e.target.value))
-                      }
-                      className="w-full rounded-lg border border-slate-700 bg-slate-800 p-3 text-white"
-                    />
-                  </div>
-                </>
-              )}
-
+                        <input
+                          type="number"
+                          min={1}
+                          value={batches}
+                          onChange={(e) =>
+                            setBatches(Number(e.target.value))
+                          }
+                          className="w-full rounded-lg border border-slate-700 bg-slate-800 p-3 text-white"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
 
-              <div className="mt-8 flex justify-end gap-4">
+              {/* Sticky footer with actions - always visible, never clipped */}
+              <div className="flex shrink-0 flex-col-reverse gap-3 border-t border-slate-800 p-4 sm:flex-row sm:justify-end sm:gap-4 sm:p-6">
                 <button
                   onClick={() => setShowModal(false)}
                   disabled={simulating}

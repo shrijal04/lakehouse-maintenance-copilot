@@ -25,10 +25,6 @@ export default function CopilotPage() {
   const sendMessage = async (text: string) => {
     if (!text.trim()) return;
 
-    // -----------------------------------------
-    // Create User Message
-    // -----------------------------------------
-
     const newMessage: ChatMessageType = {
       id: Date.now(),
       sender: "user",
@@ -39,26 +35,16 @@ export default function CopilotPage() {
       }),
     };
 
-    // -----------------------------------------
-    // Build Updated Conversation
-    // -----------------------------------------
-
     const updatedMessages = [
       ...messages,
       newMessage,
     ];
-
-    // Update UI immediately
 
     setMessages(updatedMessages);
 
     setIsThinking(true);
 
     try {
-      // -----------------------------------------
-      // Send only last 10 messages
-      // -----------------------------------------
-
       const recentMessages =
         updatedMessages.slice(-10);
 
@@ -66,12 +52,10 @@ export default function CopilotPage() {
         `${API}/copilot/chat`,
         {
           method: "POST",
-
           headers: {
             "Content-Type":
               "application/json",
           },
-
           body: JSON.stringify({
             messages: recentMessages.map(
               (message) => ({
@@ -80,7 +64,6 @@ export default function CopilotPage() {
                   "assistant"
                     ? "assistant"
                     : "user",
-
                 content: message.message,
               })
             ),
@@ -98,11 +81,8 @@ export default function CopilotPage() {
 
       const aiMessage: ChatMessageType = {
         id: Date.now() + 1,
-
         sender: "assistant",
-
         message: data.answer,
-
         time: new Date().toLocaleTimeString(
           [],
           {
@@ -111,10 +91,6 @@ export default function CopilotPage() {
           }
         ),
       };
-
-      // -----------------------------------------
-      // Add AI Response
-      // -----------------------------------------
 
       setMessages((prev) => [
         ...prev,
@@ -125,12 +101,9 @@ export default function CopilotPage() {
 
       const errorMessage: ChatMessageType = {
         id: Date.now() + 1,
-
         sender: "assistant",
-
         message:
           "Sorry, I couldn't connect to the AI service. Please try again.",
-
         time: new Date().toLocaleTimeString(
           [],
           {
@@ -149,40 +122,56 @@ export default function CopilotPage() {
     }
   };
 
+  const hasStartedConversation =
+    messages.length >
+    initialMessages.length;
+
   return (
     <AppLayout>
-      <div className="mx-auto max-w-6xl space-y-8">
-        {/* Header */}
+      <div className="flex h-full flex-1 flex-col">
 
-        <div>
-          <h1 className="text-4xl font-bold text-white">
-            Lakehouse Maintenance Copilot
-          </h1>
+        {/* Chat Layout */}
 
-          <p className="mt-2 text-slate-400">
-            Ask anything about your Iceberg
-            lakehouse.
-          </p>
+        <div className="mx-auto flex h-full w-full max-w-[1600px] flex-1 flex-col px-4 lg:px-8">
+
+          {/* Chat */}
+
+          <div className="flex-1 overflow-hidden py-4">
+            <ChatWindow
+              messages={messages}
+              isThinking={isThinking}
+            />
+          </div>
+
+          {/* Input */}
+
+          <div className="border-t border-slate-800 py-4">
+
+            <div className="mx-auto w-full max-w-5xl">
+              <ChatInput
+                onSend={sendMessage}
+              />
+            </div>
+
+          </div>
+
+          {/* Suggested Prompts */}
+
+          {!hasStartedConversation && (
+
+            <div className="pb-5">
+
+              <div className="mx-auto w-full max-w-5xl">
+                <SuggestedPrompts
+                  onSelect={sendMessage}
+                />
+              </div>
+
+            </div>
+
+          )}
+
         </div>
-
-        {/* Chat Window */}
-
-        <ChatWindow
-          messages={messages}
-          isThinking={isThinking}
-        />
-
-        {/* Suggested Prompts */}
-
-        <SuggestedPrompts
-          onSelect={sendMessage}
-        />
-
-        {/* Chat Input */}
-
-        <ChatInput
-          onSend={sendMessage}
-        />
       </div>
     </AppLayout>
   );

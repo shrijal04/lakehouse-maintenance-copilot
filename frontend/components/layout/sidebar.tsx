@@ -6,7 +6,7 @@ import { navigation } from "@/constants/navigation";
 
 export default function Sidebar() {
   return (
-    <aside className="sticky top-0 flex min-h-screen w-72 flex-col border-r border-slate-800 bg-slate-950">
+    <aside className="sticky top-0 flex min-h-screen w-60 flex-col border-r border-slate-800 bg-slate-950">
       <div className="border-b border-slate-800 p-6">
         <Logo />
       </div>

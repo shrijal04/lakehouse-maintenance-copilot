@@ -11,6 +11,14 @@ class HistoryTool(BaseTool):
     def __init__(self):
         self.maintenance_service = MaintenanceService()
 
+    @property
+    def name(self):
+        return "history"
+
+    @property
+    def description(self):
+        return "Returns historical health metrics for Iceberg tables."
+
     def execute(
         self,
         database: str,

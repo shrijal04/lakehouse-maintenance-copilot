@@ -4,7 +4,7 @@ from maintenance.run_maintenance import Maintenance
 from spark.manager import SparkManager
 
 from app.services.health_history_service import HealthRepository
-from app.services.confirmation_service import ConfirmationManager
+from app.services.confirmation_service import confirmation_manager
 
 
 class MaintenanceService:
@@ -12,10 +12,15 @@ class MaintenanceService:
     def __init__(self):
 
         self.spark = SparkManager().get_spark()
+
         self.health = HealthService(self.spark)
+
         self.health_repository = HealthRepository()
+
         self.maintenance_runner = Maintenance(self.spark)
-        self.confirmation = ConfirmationManager()
+
+        # Use the singleton confirmation manager
+        self.confirmation = confirmation_manager
 
     # ---------------------------------------------------
     # Helpers
@@ -38,12 +43,14 @@ class MaintenanceService:
         target: str,
     ):
 
-        # Return health for both tables
         if target == "both":
 
             results = []
 
-            for table in ["orders", "order_items"]:
+            for table in [
+                "orders",
+                "order_items",
+            ]:
 
                 table_name = self.get_table_name(
                     database,
@@ -61,8 +68,6 @@ class MaintenanceService:
                 results.append(metrics)
 
             return results
-
-        # Return health for one table
 
         table_name = self.get_table_name(
             database,
@@ -129,7 +134,10 @@ class MaintenanceService:
 
             results = []
 
-            for table in ["orders", "order_items"]:
+            for table in [
+                "orders",
+                "order_items",
+            ]:
 
                 table_name = self.get_table_name(
                     database,
@@ -168,14 +176,18 @@ class MaintenanceService:
     # Request Maintenance
     # ---------------------------------------------------
 
-    def request_orders_maintenance(
+    def request_maintenance(
         self,
         database: str,
         target: str,
     ):
 
         confirmation_id = (
-            self.confirmation.create_confirmation()
+            self.confirmation.create_confirmation(
+                database=database,
+                table=target,
+                action="maintenance",
+            )
         )
 
         return {
@@ -189,8 +201,8 @@ class MaintenanceService:
                 "- Rewrite manifest files\n"
                 "- Expire old snapshots\n"
                 "- Remove orphan files\n\n"
-                f"Database : {database}\n"
-                f"Target : {target}\n\n"
+                f"Database: {database}\n"
+                f"Table: {target}\n\n"
                 "Do you want to continue?"
             ),
         }
@@ -199,7 +211,7 @@ class MaintenanceService:
     # Confirm Maintenance
     # ---------------------------------------------------
 
-    def confirm_orders_maintenance(
+    def confirm_maintenance(
         self,
         confirmation_id: str,
         confirm: bool,
@@ -208,6 +220,11 @@ class MaintenanceService:
     ):
 
         if not confirm:
+
+            self.confirmation.remove_confirmation(
+                confirmation_id
+            )
+
             return {
                 "status": "cancelled",
                 "message": "Maintenance cancelled.",
@@ -216,6 +233,7 @@ class MaintenanceService:
         if not self.confirmation.is_valid_confirmation(
             confirmation_id
         ):
+
             return {
                 "status": "error",
                 "message": "Invalid or expired confirmation id.",
