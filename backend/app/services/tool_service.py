@@ -1,15 +1,27 @@
+from app.tools.tool_registry import ToolRegistry
+
+
 class ToolService:
     """
     Decides whether the AI should use
-    the LLM only or execute backend tools.
-
-    Later this class will call Spark,
-    Iceberg and Maintenance APIs.
+    backend tools or answer directly
+    using the LLM.
     """
 
     def __init__(self):
-        # Questions that need live data
+
+        # -----------------------------------------
+        # Tool Registry
+        # -----------------------------------------
+
+        self.registry = ToolRegistry()
+
+        # -----------------------------------------
+        # Keywords that require live data
+        # -----------------------------------------
+
         self.tool_keywords = [
+
             # Health
             "health",
             "score",
@@ -48,6 +60,8 @@ class ToolService:
 
             # Tables
             "orders",
+            "order",
+            "orders table",
             "order items",
             "order item",
             "order_items",
@@ -68,12 +82,14 @@ class ToolService:
             "current",
         ]
 
-    def should_use_tool(self, question: str) -> bool:
-        """
-        Returns True if the question should
-        use backend tools instead of only
-        sending it to the LLM.
-        """
+    # =====================================================
+    # Should use a tool?
+    # =====================================================
+
+    def should_use_tool(
+        self,
+        question: str,
+    ) -> bool:
 
         question = question.lower()
 
@@ -82,16 +98,16 @@ class ToolService:
             for keyword in self.tool_keywords
         )
 
-    def detect_tool(self, question: str) -> str:
-        """
-        Decide which backend tool should run.
-        """
+    # =====================================================
+    # Detect which tool
+    # =====================================================
+
+    def detect_tool(
+        self,
+        question: str,
+    ) -> str:
 
         q = question.lower()
-
-        # -------------------------
-        # Health
-        # -------------------------
 
         if any(word in q for word in [
             "health",
@@ -104,31 +120,20 @@ class ToolService:
         ]):
             return "health"
 
-        # -------------------------
-        # Issues
-        # -------------------------
-
         if any(word in q for word in [
             "issue",
+            "issues",
             "warning",
             "critical",
             "problem",
         ]):
             return "issues"
 
-        # -------------------------
-        # History
-        # -------------------------
-
         if any(word in q for word in [
             "history",
             "trend",
         ]):
             return "history"
-
-        # -------------------------
-        # Maintenance
-        # -------------------------
 
         if any(word in q for word in [
             "maintenance",
@@ -143,11 +148,14 @@ class ToolService:
 
         return "llm"
 
-    def detect_table(self, question: str) -> str:
-        """
-        Determine which table the user
-        is referring to.
-        """
+    # =====================================================
+    # Detect table
+    # =====================================================
+
+    def detect_table(
+        self,
+        question: str,
+    ) -> str:
 
         q = question.lower()
 
@@ -167,33 +175,40 @@ class ToolService:
 
         return "both"
 
-    def detect_database(self, question: str) -> str:
-        """
-        Future support for multiple databases.
+    # =====================================================
+    # Detect database
+    # =====================================================
 
-        For now always use lakehouse.
-        """
+    def detect_database(
+        self,
+        question: str,
+    ) -> str:
 
+        # Future:
+        # Detect the correct catalog/database
         return "lakehouse"
 
-    def execute_tool(self, question: str):
-        """
-        Placeholder.
+    # =====================================================
+    # Execute Tool
+    # =====================================================
 
-        Later this will call the appropriate
-        backend service (Health, Issues,
-        History, Maintenance, etc.).
-        """
+    def execute_tool(
+        self,
+        question: str,
+    ):
 
-        tool = self.detect_tool(question)
-        table = self.detect_table(question)
+        tool_name = self.detect_tool(question)
+
         database = self.detect_database(question)
 
-        print(
-            f"Tool={tool}, "
-            f"Database={database}, "
-            f"Table={table}"
-        )
+        table = self.detect_table(question)
 
-        # Will later call backend services.
-        return None
+        tool = self.registry.get_tool(tool_name)
+
+        if tool is None:
+            return None
+
+        return tool.execute(
+            database=database,
+            table=table,
+        )

@@ -24,28 +24,29 @@ class AIService:
         messages: list[ChatMessage],
     ) -> str:
 
-        if len(messages) == 0:
+        if not messages:
             return "Please ask a question."
 
         latest_question = messages[-1].content
 
         # -------------------------------------------------
-        # Step 1 : Decide whether to use a tool
+        # Execute backend tool if required
         # -------------------------------------------------
+
+        tool_result = None
 
         if self.tool_service.should_use_tool(
             latest_question
         ):
-
-            tool_result = self.tool_service.execute_tool(
-                latest_question
-            )
-
-            if tool_result is not None:
-                return tool_result
+            try:
+                tool_result = self.tool_service.execute_tool(
+                    latest_question
+                )
+            except Exception as e:
+                print(f"Tool Error: {e}")
 
         # -------------------------------------------------
-        # Step 2 : Build Conversation History
+        # Build conversation
         # -------------------------------------------------
 
         conversation = [
@@ -64,16 +65,40 @@ class AIService:
             )
 
         # -------------------------------------------------
-        # Step 3 : Call Groq
+        # Inject live tool result
+        # -------------------------------------------------
+
+        if tool_result is not None:
+
+            conversation.append(
+                {
+                    "role": "system",
+                    "content": f"""
+The following information was retrieved LIVE from the user's Apache Iceberg lakehouse.
+
+Live Data
+---------
+{tool_result}
+
+Instructions:
+- Use this live information when answering.
+- Treat these values as the source of truth.
+- Do NOT invent or estimate values.
+- Explain the results in simple language.
+- If maintenance is recommended, explain why.
+- If everything looks healthy, mention that as well.
+""",
+                }
+            )
+
+        # -------------------------------------------------
+        # Call Groq
         # -------------------------------------------------
 
         response = self.client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-
             messages=conversation,
-
             temperature=0.3,
-
             max_tokens=1024,
         )
 
