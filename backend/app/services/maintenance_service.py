@@ -5,6 +5,7 @@ from spark.manager import SparkManager
 
 from app.services.health_history_service import HealthRepository
 from app.services.confirmation_service import confirmation_manager
+from app.services.error_explainer import ErrorExplainer
 
 
 class MaintenanceService:
@@ -21,6 +22,8 @@ class MaintenanceService:
 
         # Use the singleton confirmation manager
         self.confirmation = confirmation_manager
+
+        self.error_explainer = ErrorExplainer()
 
     # ---------------------------------------------------
     # Helpers
@@ -219,6 +222,10 @@ class MaintenanceService:
         target: str,
     ):
 
+        # ---------------------------------------------
+        # User cancelled
+        # ---------------------------------------------
+
         if not confirm:
 
             self.confirmation.remove_confirmation(
@@ -230,6 +237,10 @@ class MaintenanceService:
                 "message": "Maintenance cancelled.",
             }
 
+        # ---------------------------------------------
+        # Invalid confirmation
+        # ---------------------------------------------
+
         if not self.confirmation.is_valid_confirmation(
             confirmation_id
         ):
@@ -239,16 +250,39 @@ class MaintenanceService:
                 "message": "Invalid or expired confirmation id.",
             }
 
+        # ---------------------------------------------
+        # Confirmation is valid
+        # ---------------------------------------------
+
         self.confirmation.remove_confirmation(
             confirmation_id
         )
 
-        result = self.maintenance_runner.run_maintenance(
-            database=database,
-            target=target,
-        )
+        # ---------------------------------------------
+        # Execute maintenance
+        # ---------------------------------------------
 
-        return {
-            "status": "success",
-            "result": result,
-        }
+        try:
+
+            result = self.maintenance_runner.run_maintenance(
+                database=database,
+                target=target,
+            )
+
+            return {
+                "status": "success",
+                "result": result,
+            }
+
+        # ---------------------------------------------
+        # Explain any exception
+        # ---------------------------------------------
+
+        except Exception as e:
+
+            return {
+                "status": "error",
+                "error": self.error_explainer.explain(
+                    e
+                ),
+            }

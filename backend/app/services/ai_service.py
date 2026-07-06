@@ -176,10 +176,10 @@ class AIService:
         ):
 
             conversation.append(
-                {
-                    "role": "system",
-                    "content": f"""
-You are showing a maintenance confirmation.
+    {
+        "role": "system",
+        "content": f"""
+Maintenance operation has completed.
 
 Tool Output:
 
@@ -187,33 +187,57 @@ Tool Output:
 
 Rules:
 
-Do NOT explain Apache Iceberg.
+If status is "success":
 
-Do NOT show SQL.
+Show:
 
-Do NOT provide code examples.
+# Maintenance Completed
 
-Do NOT repeat the user's question.
+## Operations Performed
 
-Simply show:
+## Summary
 
-# Maintenance Request
+---------------------------------------
 
-• Database
+If status is "cancelled":
 
-• Table
+Explain that the maintenance request was cancelled.
+No work was performed.
 
-• Operations that will run
+---------------------------------------
 
-Finally write ONLY:
+If status is "conflict":
 
-Reply **Yes** to execute.
+Explain in very simple English.
 
-Reply **No** to cancel.
+Do NOT mention Java exceptions.
+
+Do NOT show stack traces.
+
+Explain that:
+
+• Another user or process modified the table at the same time.
+
+• Apache Iceberg protects the table by rejecting conflicting writes.
+
+• No data was corrupted.
+
+• The safest solution is simply to retry the maintenance.
+
+End with:
+
+"Your data remains safe."
+
+---------------------------------------
+
+Never generate SQL.
+
+Never generate Spark code.
+
+Never explain Iceberg internals.
 """,
-                }
-            )
-
+    }
+)
         # -------------------------------------------------
         # Maintenance Result Prompt
         # -------------------------------------------------
