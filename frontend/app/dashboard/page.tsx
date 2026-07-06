@@ -6,6 +6,7 @@ import AppLayout from "@/components/layout/appLayout";
 import MetricCard from "@/components/dashboard/MetricCard";
 import PipelineChart from "@/components/dashboard/PipelineChart";
 import RecentJobs from "@/components/dashboard/RecentJobs";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 import {
   Database,
@@ -17,13 +18,21 @@ import {
 import { getDashboardMetrics } from "@/services/dashboard";
 
 export default function DashboardPage() {
+
+  const [loading, setLoading] = useState(true);
+
   const [metrics, setMetrics] = useState<any[]>([]);
   const [pipeline, setPipeline] = useState<any[]>([]);
   const [jobs, setJobs] = useState<any[]>([]);
 
   useEffect(() => {
+
     async function load() {
+
       try {
+
+        setLoading(true);
+
         const data = await getDashboardMetrics();
 
         setMetrics([
@@ -56,43 +65,59 @@ export default function DashboardPage() {
         setPipeline(data.pipelineActivity);
 
         setJobs(data.maintenanceHistory);
+
       } catch (error) {
+
         console.error("Failed to load dashboard.", error);
+
+      } finally {
+
+        setLoading(false);
+
       }
+
     }
 
     load();
+
   }, []);
 
   return (
-    <AppLayout>
-      <div className="space-y-10">
-        <div>
-          <h1 className="text-4xl font-bold text-white">
-            Dashboard
-          </h1>
+    <>
+      {loading && <LoadingOverlay />}
 
-          <p className="mt-2 text-slate-400">
-            Monitor your Iceberg lakehouse and maintenance jobs.
-          </p>
+      <AppLayout>
+        <div className="space-y-10">
+
+          <div>
+            <h1 className="text-4xl font-bold text-white">
+              Dashboard
+            </h1>
+
+            <p className="mt-2 text-slate-400">
+              Monitor your Iceberg lakehouse and maintenance jobs.
+            </p>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-4">
+            {metrics.map((metric) => (
+              <MetricCard
+                key={metric.title}
+                title={metric.title}
+                value={metric.value}
+                description={metric.description}
+                icon={metric.icon}
+              />
+            ))}
+          </div>
+
+          <PipelineChart data={pipeline} />
+
+          <RecentJobs jobs={jobs} />
+
         </div>
-
-        <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-4">
-          {metrics.map((metric) => (
-            <MetricCard
-              key={metric.title}
-              title={metric.title}
-              value={metric.value}
-              description={metric.description}
-              icon={metric.icon}
-            />
-          ))}
-        </div>
-
-        <PipelineChart data={pipeline} />
-
-        <RecentJobs jobs={jobs} />
-      </div>
-    </AppLayout>
+      </AppLayout>
+    </>
   );
+
 }
