@@ -4,6 +4,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from spark.manager import SparkManagerService
+from scheduler.scheduler import start_scheduler
+
 from app.routers.lakehouse import router
 from app.routers import etl
 from app.routers import copilot
@@ -11,10 +13,20 @@ from app.routers import copilot
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+
+    # --------------------------------------------------
     # Runs when FastAPI starts
+    # --------------------------------------------------
+
+    print("Starting Health Scheduler...")
+    start_scheduler()
+
     yield
 
+    # --------------------------------------------------
     # Runs when FastAPI shuts down
+    # --------------------------------------------------
+
     print("Stopping Spark Session...")
     SparkManagerService.stop()
 

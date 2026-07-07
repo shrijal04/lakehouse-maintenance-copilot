@@ -15,6 +15,7 @@ from app.services.maintenance_service import (
 )
 from app.services.prompt_service import SYSTEM_PROMPT
 from app.services.tool_service import ToolService
+from app.services.alert_cache import CURRENT_ALERTS
 
 load_dotenv()
 
@@ -156,6 +157,47 @@ class AIService:
                 "content": SYSTEM_PROMPT,
             }
         ]
+
+        # -------------------------------------------------
+        # Proactive Health Alerts
+        # -------------------------------------------------
+
+        if CURRENT_ALERTS:
+
+            alert_text = "\n".join(
+                [
+                    (
+                        f"Table: {alert['table']}\n"
+                        f"Severity: {alert['severity']}\n"
+                        f"Issue: {alert['issue']}\n"
+                        f"Recommendation: {alert['recommendation']}"
+                    )
+                    for alert in CURRENT_ALERTS
+                ]
+            )
+
+            conversation.append(
+                {
+                    "role": "system",
+                    "content": f"""
+        The lakehouse monitoring system has already detected the following active health issues.
+
+        {alert_text}
+
+        Before answering the user's question:
+
+        - Briefly tell the user that a maintenance issue has already been detected.
+        - Summarize the issue(s) in simple English.
+        - Explain why they matter.
+        - Mention the recommendation.
+        - Then continue answering the user's actual question normally.
+
+        Do NOT invent additional issues.
+        Do NOT mention Spark internals.
+        Do NOT mention implementation details.
+        """,
+                }
+            )
 
         for message in messages:
 
