@@ -5,7 +5,7 @@ from spark.manager import SparkManager
 class IcebergService:
 
     CATALOG = "local"
-    DATABASE = "lakehouse"
+    DATABASE = "silver"
 
     def __init__(self):
 

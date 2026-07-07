@@ -41,7 +41,7 @@ export default function TableDetails({
 
   const items = [
     ["Table", table.table_name],
-    ["Namespace", "local.lakehouse"],
+    ["Namespace", "local.silver"],
     ["Snapshots", table.health.snapshot_count],
     ["Manifest Files", table.health.manifest_file_count],
     ["Data Files", table.health.data_file_count],

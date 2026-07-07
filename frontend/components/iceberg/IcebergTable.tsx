@@ -97,7 +97,7 @@ export default function IcebergTable({
                   </td>
 
                   <td className="text-slate-300">
-                    local.lakehouse
+                    local.silver
                   </td>
 
                   <td className="text-white">

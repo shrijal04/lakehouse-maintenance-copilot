@@ -27,7 +27,7 @@ export default function IncrementalPage() {
     "business" | "smallFiles"
   >("business");
 
-  const [database, setDatabase] = useState("lakehouse");
+  const [database, setDatabase] = useState("silver");
 
   const [tableTarget, setTableTarget] = useState<
     "orders" | "order_items" | "both"
@@ -343,7 +343,7 @@ export default function IncrementalPage() {
                             onChange={(e) => setDatabase(e.target.value)}
                             className="w-full rounded-lg border border-slate-700 bg-slate-800 p-3 text-white"
                           >
-                            <option value="lakehouse">lakehouse</option>
+                            <option value="lakehouse">silver</option>
 
                             {/* Add more databases later */}
                           </select>

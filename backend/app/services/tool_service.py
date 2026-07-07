@@ -210,7 +210,7 @@ class ToolService:
         lakehouse database.
         """
 
-        return "lakehouse"
+        return "silver"
 
     # =====================================================
     # Execute Tool

@@ -26,8 +26,8 @@ def scheduled_health_check():
         health_service = HealthService(spark)
 
         tables = [
-            "local.lakehouse.orders",
-            "local.lakehouse.order_items",
+            "local.silver.orders",
+            "local.silver.order_items",
         ]
 
         alerts = []

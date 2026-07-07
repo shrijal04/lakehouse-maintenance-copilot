@@ -13,6 +13,7 @@ class IncrementalETL:
         self.spark = SparkManagerService().get_spark()
 
         self.repository = ETLRepository()
+
         self.transformer = DataTransformer()
 
     def run(self):
@@ -20,7 +21,7 @@ class IncrementalETL:
         start_time = datetime.now()
 
         # ==========================================================
-        # Last Successful ETL
+        # Last Successful Run
         # ==========================================================
 
         last_run = self.repository.get_last_run(
@@ -28,11 +29,11 @@ class IncrementalETL:
         )
 
         print("=" * 60)
-        print(f"Last successful run: {last_run}")
+        print(f"Last Successful Run : {last_run}")
         print("=" * 60)
 
         # ==========================================================
-        # Incremental Orders
+        # Read Incremental Orders
         # ==========================================================
 
         orders_df = (
@@ -53,33 +54,8 @@ class IncrementalETL:
             .load()
         )
 
-        orders_df = self.transformer.transform_orders(orders_df)
-
-        orders_count = orders_df.count()
-
-        if orders_count > 0:
-
-            orders_df.createOrReplaceTempView(
-                "staging_orders"
-            )
-
-            with open(
-                "spark/sql/merge_orders.sql",
-                "r",
-            ) as f:
-
-                merge_sql = f.read()
-
-            self.spark.sql(merge_sql)
-
-            print("Orders merged successfully.")
-
-        else:
-
-            print("No changed orders found.")
-
         # ==========================================================
-        # Incremental Order Items
+        # Read Incremental Order Items
         # ==========================================================
 
         order_items_df = (
@@ -102,11 +78,94 @@ class IncrementalETL:
             .load()
         )
 
-        order_items_df = self.transformer.transform_order_items(
-            order_items_df
+        orders_count = orders_df.count()
+        items_count = order_items_df.count()
+
+        print(f"Orders Found      : {orders_count}")
+        print(f"Order Items Found : {items_count}")
+
+        if orders_count == 0 and items_count == 0:
+
+            print("No new records found.")
+
+            return {
+                "status": "No Changes",
+                "orders_processed": 0,
+                "order_items_processed": 0,
+            }
+
+        # ==========================================================
+        # BRONZE LAYER
+        # Raw data storage
+        # ==========================================================
+
+        print("\nUpdating Bronze Layer...")
+
+        if orders_count > 0:
+
+            (
+                orders_df.writeTo(
+                    "local.bronze.orders"
+                )
+                .append()
+            )
+
+            print("Bronze Orders Updated")
+
+        if items_count > 0:
+
+            (
+                order_items_df.writeTo(
+                    "local.bronze.order_items"
+                )
+                .append()
+            )
+
+            print("Bronze Order Items Updated")
+
+        # ==========================================================
+        # SILVER LAYER
+        # Transformations
+        # ==========================================================
+
+        print("\nTransforming Data...")
+
+        orders_df = (
+            self.transformer.transform_orders(
+                orders_df
+            )
         )
 
-        items_count = order_items_df.count()
+        order_items_df = (
+            self.transformer.transform_order_items(
+                order_items_df
+            )
+        )
+
+        # ==========================================================
+        # SILVER MERGE - ORDERS
+        # ==========================================================
+
+        if orders_count > 0:
+
+            orders_df.createOrReplaceTempView(
+                "staging_orders"
+            )
+
+            with open(
+                "spark/sql/merge_silver_orders.sql",
+                "r",
+            ) as f:
+
+                merge_sql = f.read()
+
+            self.spark.sql(merge_sql)
+
+            print("Silver Orders Merged")
+
+        # ==========================================================
+        # SILVER MERGE - ORDER ITEMS
+        # ==========================================================
 
         if items_count > 0:
 
@@ -115,7 +174,7 @@ class IncrementalETL:
             )
 
             with open(
-                "spark/sql/merge_order_items.sql",
+                "spark/sql/merge_silver_order_items.sql",
                 "r",
             ) as f:
 
@@ -123,14 +182,31 @@ class IncrementalETL:
 
             self.spark.sql(merge_sql)
 
-            print("Order items merged successfully.")
-
-        else:
-
-            print("No changed order items found.")
+            print("Silver Order Items Merged")
 
         # ==========================================================
-        # Update Metadata
+        # GOLD LAYER
+        # Business Aggregations
+        # ==========================================================
+
+        print("\nRefreshing Gold Tables...")
+
+        sql_files = [
+            "spark/sql/refresh_daily_sales.sql",
+            "spark/sql/refresh_store_sales.sql",
+            "spark/sql/refresh_customer_sales.sql",
+        ]
+
+        for file in sql_files:
+
+            with open(file, "r") as f:
+
+                self.spark.sql(f.read())
+
+        print("Gold Tables Refreshed")
+
+        # ==========================================================
+        # Update ETL Metadata
         # ==========================================================
 
         end_time = datetime.now()
@@ -141,7 +217,7 @@ class IncrementalETL:
         )
 
         # ==========================================================
-        # Save ETL Log
+        # Save ETL Run History
         # ==========================================================
 
         self.repository.log_etl_run(
@@ -151,20 +227,20 @@ class IncrementalETL:
             status="SUCCESS",
             orders_processed=orders_count,
             order_items_processed=items_count,
-            message="Incremental load completed successfully.",
+            message="Bronze -> Silver -> Gold Incremental ETL Completed",
         )
 
-        print("ETL metadata updated.")
+        print("=" * 60)
+        print("Incremental ETL Completed Successfully")
+        print("=" * 60)
 
-        print("=" * 60)
-        print(f"Changed orders      : {orders_count}")
-        print(f"Changed order items : {items_count}")
-        print("=" * 60)
+        print(f"Orders Processed      : {orders_count}")
+        print(f"Order Items Processed : {items_count}")
 
         return {
             "status": "Success",
-            "orders_merged": orders_count,
-            "order_items_merged": items_count,
+            "orders_processed": orders_count,
+            "order_items_processed": items_count,
             "last_run": str(last_run),
         }
 

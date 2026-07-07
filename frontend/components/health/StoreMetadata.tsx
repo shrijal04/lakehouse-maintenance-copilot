@@ -12,7 +12,7 @@ export default function StorageMetadata() {
   useEffect(() => {
     async function load() {
       try {
-        const data = await getHealth("lakehouse", "both");
+        const data = await getHealth("silver", "both");
 
         if (Array.isArray(data)) {
           setTables(data);

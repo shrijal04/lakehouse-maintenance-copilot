@@ -26,7 +26,7 @@ export default function MaintenanceCard() {
   // -----------------------------------------
 
   const [database, setDatabase] =
-    useState("lakehouse");
+    useState("silver");
 
   const [target, setTarget] = useState<
     "orders" | "order_items" | "both"
@@ -153,7 +153,7 @@ ${table.before.total_size_mb} → ${table.after.total_size_mb}
             className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white"
           >
             <option value="lakehouse">
-              lakehouse
+              silver
             </option>
           </select>
         </div>

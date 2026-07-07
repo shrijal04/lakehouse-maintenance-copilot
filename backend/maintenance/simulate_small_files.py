@@ -118,7 +118,7 @@ def main():
 
     simulate_small_files(
         catalog="local",
-        database="lakehouse",
+        database="silver",
         target="both",
         batches=100,
     )

@@ -1,4 +1,4 @@
-MERGE INTO local.lakehouse.orders AS target
+MERGE INTO local.silver.orders AS target
 
 USING staging_orders AS source
 

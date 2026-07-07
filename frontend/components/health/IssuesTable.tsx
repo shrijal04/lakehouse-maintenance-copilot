@@ -25,11 +25,11 @@ export default function IssuesTable() {
         const [orders, orderItems] =
           await Promise.all([
             getIssues(
-              "lakehouse",
+              "silver",
               "orders"
             ),
             getIssues(
-              "lakehouse",
+              "silver",
               "order_items"
             ),
           ]);

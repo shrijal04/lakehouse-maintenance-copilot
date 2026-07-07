@@ -242,7 +242,7 @@ def main():
     maintenance = Maintenance(spark)
 
     result = maintenance.run_maintenance(
-        database="lakehouse",
+        database="silver",
         target="both",
     )
 

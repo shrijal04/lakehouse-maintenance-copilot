@@ -7,8 +7,8 @@ from spark.manager import SparkManager
 
 class DashboardService:
 
-    ORDERS_TABLE = "local.lakehouse.orders"
-    ORDER_ITEMS_TABLE = "local.lakehouse.order_items"
+    ORDERS_TABLE = "local.silver.orders"
+    ORDER_ITEMS_TABLE = "local.silver.order_items"
 
     def __init__(self):
         self.spark = SparkManager().get_spark()

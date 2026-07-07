@@ -13,7 +13,7 @@ export default function HealthScore() {
     async function load() {
       try {
         const data = await getHealth(
-          "lakehouse",
+          "silver",
           "both"
         );
 

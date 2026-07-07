@@ -16,13 +16,23 @@ class InitialLoadPipeline:
 
         self.spark = SparkManagerService().get_spark()
 
+        # --------------------------------------------------
+        # Create Bronze Namespace
+        # --------------------------------------------------
+
         self.spark.sql(
-            "CREATE NAMESPACE IF NOT EXISTS local.lakehouse"
+            "CREATE NAMESPACE IF NOT EXISTS local.bronze"
         )
 
     def load_table(self, table_name: str):
 
-        print(f"\nLoading {table_name}...")
+        print("\n" + "=" * 60)
+        print(f"Loading Bronze Table : {table_name}")
+        print("=" * 60)
+
+        # --------------------------------------------------
+        # Read table from PostgreSQL
+        # --------------------------------------------------
 
         df = (
             self.spark.read
@@ -35,15 +45,23 @@ class InitialLoadPipeline:
             .load()
         )
 
-        print(f"Rows: {df.count()}")
+        print(f"Rows Loaded : {df.count()}")
+
+        # --------------------------------------------------
+        # Save as Bronze Iceberg Table
+        # --------------------------------------------------
 
         (
-            df.writeTo(f"local.lakehouse.{table_name}")
+            df.writeTo(
+                f"local.bronze.{table_name}"
+            )
             .using("iceberg")
             .createOrReplace()
         )
 
-        print(f"{table_name} loaded successfully.")
+        print(
+            f"Bronze table local.bronze.{table_name} created successfully."
+        )
 
     def run(self):
 
@@ -51,7 +69,7 @@ class InitialLoadPipeline:
 
             self.load_table(table)
 
-        print("\nInitial load completed.")
+        print("\nInitial Bronze Load Completed.")
 
         return {
             "status": "Success",

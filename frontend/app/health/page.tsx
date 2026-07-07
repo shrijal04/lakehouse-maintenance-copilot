@@ -56,14 +56,14 @@ export default function HealthPage() {
 
           {/* Orders Trend */}
           <HealthTrend
-            database="lakehouse"
+            database="silver"
             table="orders"
             title="Orders File Count Trend"
           />
 
           {/* Order Items Trend */}
           <HealthTrend
-            database="lakehouse"
+            database="silver"
             table="order_items"
             title="Order Items File Count Trend"
           />

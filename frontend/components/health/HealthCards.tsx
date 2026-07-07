@@ -90,7 +90,7 @@ export default function HealthCards() {
     async function loadHealth() {
       try {
         const data = await getHealth(
-          "lakehouse",
+          "silver",
           "both"
         );
 
