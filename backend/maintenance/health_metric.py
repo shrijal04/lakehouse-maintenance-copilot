@@ -55,7 +55,17 @@ class HealthService:
         # Orphan Files
         # ==========================================
 
-        orphan_file_count = 0
+        catalog, table_ident = table_name.split(".", 1)
+
+        orphan_sql = f"""
+            CALL {catalog}.system.remove_orphan_files(
+                table => '{table_ident}',
+                dry_run => true
+            )
+        """
+
+        orphan_rows = self.spark.sql(orphan_sql).collect()
+        orphan_file_count = len(orphan_rows)
 
         return {
             "table": table_name,
