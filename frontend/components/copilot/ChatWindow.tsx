@@ -20,6 +20,9 @@ export default function ChatWindow({
           sender={msg.sender}
           message={msg.message}
           time={msg.time}
+
+          pdf={msg.pdf}
+          docx={msg.docx}
         />
       ))}
 

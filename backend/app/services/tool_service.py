@@ -24,6 +24,18 @@ class ToolService:
         self.registry = ToolRegistry()
 
         # -----------------------------------------
+        # NOTE: ToolService did not previously own a
+        # report generator. Step 2 below calls
+        # self.report_service.generate_daily_report(),
+        # so a ReportService instance is wired in here.
+        # Adjust the import path to match your project
+        # if it lives somewhere else.
+        # -----------------------------------------
+
+        from app.services.report_service import ReportService
+        self.report_service = ReportService()
+
+        # -----------------------------------------
         # Keywords that indicate live data is needed
         # -----------------------------------------
 
@@ -87,6 +99,27 @@ class ToolService:
             "count",
             "latest",
             "current",
+
+            # Reports (Step 1)
+            "report",
+            "daily report",
+            "generate report",
+            "summary report",
+            "pdf report",
+            "document",
+        ]
+
+        # -----------------------------------------
+        # Step 1 — Keywords specific to report requests
+        # -----------------------------------------
+
+        self.report_keywords = [
+            "report",
+            "daily report",
+            "generate report",
+            "summary report",
+            "pdf report",
+            "document",
         ]
 
     # =====================================================
@@ -123,6 +156,13 @@ class ToolService:
         """
 
         q = question.lower()
+
+        # Step 1 — check report requests first so that
+        # phrases like "show me the report" don't get
+        # swallowed by the "show"/"display" health checks.
+
+        if any(word in q for word in self.report_keywords):
+            return "report"
 
         if any(word in q for word in [
             "health",
@@ -225,6 +265,13 @@ class ToolService:
         """
 
         tool_name = self.detect_tool(question)
+
+        # Step 2 — report requests are handled by the
+        # report service rather than the ToolRegistry,
+        # since it isn't a registered Iceberg tool.
+
+        if tool_name == "report":
+            return self.report_service.generate_daily_report()
 
         database = self.detect_database(question)
 

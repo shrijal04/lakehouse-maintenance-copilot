@@ -1,4 +1,4 @@
-import { Bot, User } from "lucide-react";
+import { Bot, User, Download } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -6,13 +6,21 @@ interface ChatMessageProps {
   sender: "assistant" | "user";
   message: string;
   time: string;
+
+  pdf?: string;
+  docx?: string;
 }
+
+const API = "http://127.0.0.1:8000";
 
 export default function ChatMessage({
   sender,
   message,
   time,
+  pdf,
+  docx,
 }: ChatMessageProps) {
+
   const isAssistant = sender === "assistant";
 
   return (
@@ -27,6 +35,7 @@ export default function ChatMessage({
         }`}
       >
         {/* Avatar */}
+
         <div
           className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
             isAssistant
@@ -47,7 +56,8 @@ export default function ChatMessage({
           )}
         </div>
 
-        {/* Bubble */}
+        {/* Chat Bubble */}
+
         <div
           className={`rounded-2xl p-5 shadow-lg ${
             isAssistant
@@ -66,13 +76,13 @@ export default function ChatMessage({
                 ),
 
                 h2: ({ children }) => (
-                  <h2 className="mt-6 mb-3 text-2xl font-semibold text-white">
+                  <h2 className="mb-3 mt-6 text-2xl font-semibold text-white">
                     {children}
                   </h2>
                 ),
 
                 h3: ({ children }) => (
-                  <h3 className="mt-5 mb-3 text-xl font-semibold text-white">
+                  <h3 className="mb-3 mt-5 text-xl font-semibold text-white">
                     {children}
                   </h3>
                 ),
@@ -174,6 +184,38 @@ export default function ChatMessage({
             </p>
           )}
 
+          {/* Download Buttons */}
+
+          {isAssistant && (pdf || docx) && (
+            <div className="mt-6 flex gap-4">
+
+              {pdf && (
+                <a
+                  href={`${API}/lakehouse/report/pdf`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 font-semibold text-black transition hover:bg-green-400"
+                >
+                  <Download size={18} />
+                  Download PDF
+                </a>
+              )}
+
+              {docx && (
+                <a
+                  href={`${API}/lakehouse/report/docx`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 font-semibold text-white transition hover:bg-blue-400"
+                >
+                  <Download size={18} />
+                  Download DOCX
+                </a>
+              )}
+
+            </div>
+          )}
+
           <p
             className={`mt-4 text-xs ${
               isAssistant
@@ -183,6 +225,7 @@ export default function ChatMessage({
           >
             {time}
           </p>
+
         </div>
       </div>
     </div>

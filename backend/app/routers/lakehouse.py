@@ -1,4 +1,5 @@
 from typing import List
+from pathlib import Path
 
 from fastapi import APIRouter, Query
 from fastapi.responses import FileResponse
@@ -7,6 +8,7 @@ from app.schemas.health import (
     HealthResponse,
     HealthIssue,
 )
+
 from app.schemas.maintenance import (
     ConfirmationResponse,
     MaintenanceConfirmation,
@@ -142,10 +144,16 @@ def download_pdf():
 
     report = report_service.generate_daily_report()
 
+    pdf_path = (
+        Path(__file__).resolve().parents[2]
+        / "reports"
+        / report["pdf"]
+    )
+
     return FileResponse(
-        report["pdf"],
+        path=pdf_path,
         media_type="application/pdf",
-        filename="Lakehouse_Daily_Report.pdf",
+        filename=report["pdf"],
     )
 
 
@@ -158,8 +166,14 @@ def download_docx():
 
     report = report_service.generate_daily_report()
 
+    docx_path = (
+        Path(__file__).resolve().parents[2]
+        / "reports"
+        / report["docx"]
+    )
+
     return FileResponse(
-        report["docx"],
+        path=docx_path,
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        filename="Lakehouse_Daily_Report.docx",
+        filename=report["docx"],
     )

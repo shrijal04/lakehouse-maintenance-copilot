@@ -1,5 +1,7 @@
 import os
 
+from pathlib import Path
+
 from dotenv import load_dotenv
 from groq import Groq
 
@@ -104,11 +106,11 @@ Today's Lakehouse Data:
         )
 
         # -----------------------------
-        # Return everything
+        # Return only filenames (Step 5)
         # -----------------------------
 
         return {
-            "ai_report": report_text,
-            "pdf": pdf_path,
-            "docx": docx_path,
+            "summary": report_text,
+            "pdf": Path(pdf_path).name,
+            "docx": Path(docx_path).name,
         }

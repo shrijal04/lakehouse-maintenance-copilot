@@ -16,6 +16,7 @@ const API =
   "http://127.0.0.1:8000";
 
 export default function CopilotPage() {
+
   const [messages, setMessages] =
     useState<ChatMessageType[]>(initialMessages);
 
@@ -23,6 +24,7 @@ export default function CopilotPage() {
     useState(false);
 
   const sendMessage = async (text: string) => {
+
     if (!text.trim()) return;
 
     const newMessage: ChatMessageType = {
@@ -45,6 +47,7 @@ export default function CopilotPage() {
     setIsThinking(true);
 
     try {
+
       const recentMessages =
         updatedMessages.slice(-10);
 
@@ -60,8 +63,7 @@ export default function CopilotPage() {
             messages: recentMessages.map(
               (message) => ({
                 role:
-                  message.sender ===
-                  "assistant"
+                  message.sender === "assistant"
                     ? "assistant"
                     : "user",
                 content: message.message,
@@ -83,20 +85,23 @@ export default function CopilotPage() {
         id: Date.now() + 1,
         sender: "assistant",
         message: data.answer,
-        time: new Date().toLocaleTimeString(
-          [],
-          {
-            hour: "2-digit",
-            minute: "2-digit",
-          }
-        ),
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+
+        // NEW
+        pdf: data.pdf,
+        docx: data.docx,
       };
 
       setMessages((prev) => [
         ...prev,
         aiMessage,
       ]);
+
     } catch (error) {
+
       console.error(error);
 
       const errorMessage: ChatMessageType = {
@@ -104,21 +109,21 @@ export default function CopilotPage() {
         sender: "assistant",
         message:
           "Sorry, I couldn't connect to the AI service. Please try again.",
-        time: new Date().toLocaleTimeString(
-          [],
-          {
-            hour: "2-digit",
-            minute: "2-digit",
-          }
-        ),
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       };
 
       setMessages((prev) => [
         ...prev,
         errorMessage,
       ]);
+
     } finally {
+
       setIsThinking(false);
+
     }
   };
 
@@ -128,43 +133,42 @@ export default function CopilotPage() {
 
   return (
     <AppLayout>
-      <div className="flex h-full flex-1 flex-col">
 
-        {/* Chat Layout */}
+      <div className="flex h-full flex-1 flex-col">
 
         <div className="mx-auto flex h-full w-full max-w-[1600px] flex-1 flex-col px-4 lg:px-8">
 
-          {/* Chat */}
-
           <div className="flex-1 overflow-hidden py-4">
+
             <ChatWindow
               messages={messages}
               isThinking={isThinking}
             />
-          </div>
 
-          {/* Input */}
+          </div>
 
           <div className="border-t border-slate-800 py-4">
 
             <div className="mx-auto w-full max-w-5xl">
+
               <ChatInput
                 onSend={sendMessage}
               />
+
             </div>
 
           </div>
-
-          {/* Suggested Prompts */}
 
           {!hasStartedConversation && (
 
             <div className="pb-5">
 
               <div className="mx-auto w-full max-w-5xl">
+
                 <SuggestedPrompts
                   onSelect={sendMessage}
                 />
+
               </div>
 
             </div>
@@ -172,7 +176,9 @@ export default function CopilotPage() {
           )}
 
         </div>
+
       </div>
+
     </AppLayout>
   );
 }

@@ -143,6 +143,14 @@ class AIService:
                 elif tool_name == "history":
                     prompt_type = "history"
 
+                # Step 3 — route report-tool results to
+                # their own prompt_type instead of falling
+                # through to the generic "Health / Issues /
+                # History" branch below.
+
+                elif tool_name == "report":
+                    prompt_type = "report"
+
             except Exception as e:
 
                 print(e)
@@ -329,6 +337,42 @@ Show:
             )
 
         # -------------------------------------------------
+        # Report Prompt (Step 4)
+        # -------------------------------------------------
+
+        elif (
+            tool_result is not None
+            and prompt_type == "report"
+        ):
+
+            conversation.append(
+                {
+                    "role": "system",
+                    "content": f"""
+Today's AI report has already been generated.
+
+Tool Output
+
+{tool_result}
+
+Rules:
+
+Show the report exactly.
+
+Do not rewrite numbers.
+
+Do not invent metrics.
+
+At the end say:
+
+"The report is ready to download."
+
+Do not generate another report.
+""",
+                }
+            )
+
+        # -------------------------------------------------
         # Health / Issues / History
         # -------------------------------------------------
 
@@ -373,7 +417,7 @@ Do not mention internal implementation.
         )
 
         return response.choices[0].message.content
-    
+
     def generate_daily_report(self, report: dict) -> str:
 
         conversation = [
