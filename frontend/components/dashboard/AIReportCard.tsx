@@ -17,7 +17,7 @@ export default function AIReportCard() {
 
       const result = await generateReport();
 
-      setSummary(result.summary);
+      setSummary(result.ai_report);
     } catch (err) {
       console.error(err);
 
