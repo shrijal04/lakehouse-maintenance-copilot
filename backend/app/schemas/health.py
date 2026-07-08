@@ -10,6 +10,7 @@ class HealthResponse(BaseModel):
 
     manifest_file_count: int
     orphan_file_count: int
+    health_score: int
 
 class HealthIssue(BaseModel):
     severity: str

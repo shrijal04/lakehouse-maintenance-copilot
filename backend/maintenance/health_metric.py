@@ -7,6 +7,14 @@ BASE_DIR = os.path.abspath(
 
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "spark"))
+from app.services.health_score_service import HealthScoreService
+
+BASE_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..")
+)
+
+sys.path.append(BASE_DIR)
+sys.path.append(os.path.join(BASE_DIR, "spark"))
 
 from spark.session import SparkManager
 
@@ -67,7 +75,7 @@ class HealthService:
         orphan_rows = self.spark.sql(orphan_sql).collect()
         orphan_file_count = len(orphan_rows)
 
-        return {
+        metrics = {
             "table": table_name,
             "snapshot_count": snapshot_count,
             "data_file_count": files["file_count"],
@@ -76,6 +84,10 @@ class HealthService:
             "manifest_file_count": manifest_count,
             "orphan_file_count": orphan_file_count,
         }
+
+        metrics["health_score"] = HealthScoreService.calculate(metrics)
+
+        return metrics
 
     def get_health_issues(self, metrics: dict):
         """
@@ -167,6 +179,7 @@ class HealthService:
         print(f"Data Files       : {metrics['data_file_count']}")
         print(f"Average File KB  : {metrics['average_file_kb']}")
         print(f"Total Size MB    : {metrics['total_size_mb']}")
+        print(f"Health Score     : {metrics['health_score']}")
 
 
 def main():

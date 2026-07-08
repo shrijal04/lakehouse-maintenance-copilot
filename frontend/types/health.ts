@@ -72,4 +72,6 @@ export interface TableHealth {
 
   manifest_file_count: number;
   orphan_file_count: number;
+
+  health_score: number;
 }

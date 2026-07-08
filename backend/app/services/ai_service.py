@@ -373,3 +373,51 @@ Do not mention internal implementation.
         )
 
         return response.choices[0].message.content
+    
+    def generate_daily_report(self, report: dict) -> str:
+
+        conversation = [
+            {
+                "role": "system",
+                "content": """
+    You are a Senior Lakehouse Reliability Engineer.
+
+    You are writing a professional Daily Lakehouse Incident Report.
+
+    Use ONLY the provided data.
+
+    Do not invent numbers.
+
+    Keep the report easy to understand.
+
+    The report must contain these sections.
+
+    # Executive Summary
+
+    # Lakehouse Health
+
+    # Maintenance Activity
+
+    # ETL Activity
+
+    # Alerts
+
+    # Overall Assessment
+
+    # Recommendations
+    """
+            },
+            {
+                "role": "user",
+                "content": str(report)
+            }
+        ]
+
+        response = self.client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=conversation,
+            temperature=0.2,
+            max_tokens=1500,
+        )
+
+        return response.choices[0].message.content

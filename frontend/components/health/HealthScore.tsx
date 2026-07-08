@@ -12,10 +12,7 @@ export default function HealthScore() {
   useEffect(() => {
     async function load() {
       try {
-        const data = await getHealth(
-          "silver",
-          "both"
-        );
+        const data = await getHealth("silver", "both");
 
         if (Array.isArray(data)) {
           setTables(data);
@@ -39,48 +36,19 @@ export default function HealthScore() {
   }
 
   // ----------------------------------
-  // Combined Metrics
+  // Overall Health Score
   // ----------------------------------
 
-  const snapshotCount = tables.reduce(
-    (sum, table) => sum + table.snapshot_count,
-    0
-  );
-
-  const dataFileCount = tables.reduce(
-    (sum, table) => sum + table.data_file_count,
-    0
-  );
-
-  const averageFileKB =
+  const score = Math.round(
     tables.reduce(
-      (sum, table) => sum + table.average_file_kb,
+      (sum, table) => sum + table.health_score,
       0
-    ) / tables.length;
+    ) / tables.length
+  );
 
   // ----------------------------------
-  // Health Score
+  // Health Status
   // ----------------------------------
-
-  let score = 100;
-
-  if (snapshotCount > 100) {
-    score -= 30;
-  } else if (snapshotCount > 40) {
-    score -= 15;
-  }
-
-  if (averageFileKB < 64) {
-    score -= 30;
-  } else if (averageFileKB < 128) {
-    score -= 15;
-  }
-
-  if (dataFileCount > 40) {
-    score -= 20;
-  }
-
-  score = Math.max(score, 0);
 
   let status: "Healthy" | "Warning" | "Critical";
 

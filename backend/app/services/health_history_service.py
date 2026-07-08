@@ -26,7 +26,8 @@ class HealthRepository:
                         average_file_kb,
                         total_size_mb,
                         manifest_file_count,
-                        orphan_file_count
+                        orphan_file_count,
+                        health_score
                     )
                     VALUES
                     (
@@ -36,7 +37,8 @@ class HealthRepository:
                         :average_file_kb,
                         :total_size_mb,
                         :manifest_file_count,
-                        :orphan_file_count
+                        :orphan_file_count,
+                        :health_score
                     )
                 """),
                 {
@@ -47,6 +49,7 @@ class HealthRepository:
                     "total_size_mb": metrics["total_size_mb"],
                     "manifest_file_count": metrics["manifest_file_count"],
                     "orphan_file_count": metrics["orphan_file_count"],
+                    "health_score": metrics["health_score"],
                 },
             )
 
@@ -68,7 +71,8 @@ class HealthRepository:
                         average_file_kb,
                         total_size_mb,
                         manifest_file_count,
-                        orphan_file_count
+                        orphan_file_count,
+                        health_score
                     FROM lakehouse_health_history
                     WHERE table_name = :table_name
                     ORDER BY recorded_at ASC
@@ -92,6 +96,7 @@ class HealthRepository:
                         "total_size_mb": float(row.total_size_mb),
                         "manifest_file_count": row.manifest_file_count,
                         "orphan_file_count": row.orphan_file_count,
+                        "health_score": row.health_score,
                     }
                 )
 
