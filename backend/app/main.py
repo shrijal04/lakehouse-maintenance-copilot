@@ -11,6 +11,7 @@ from app.routers import etl
 from app.routers import copilot
 
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
@@ -45,6 +46,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --------------------------------------------------
+# Routers
+# --------------------------------------------------
 
 app.include_router(router)
 app.include_router(etl.router)

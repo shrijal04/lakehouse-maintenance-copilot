@@ -6,6 +6,7 @@ import AppLayout from "@/components/layout/appLayout";
 import MetricCard from "@/components/dashboard/MetricCard";
 import PipelineChart from "@/components/dashboard/PipelineChart";
 import RecentJobs from "@/components/dashboard/RecentJobs";
+import AIReportCard from "@/components/dashboard/AIReportCard";
 import LoadingOverlay from "@/components/LoadingOverlay";
 
 import {
@@ -87,6 +88,7 @@ export default function DashboardPage() {
       {loading && <LoadingOverlay />}
 
       <AppLayout>
+
         <div className="space-y-10">
 
           <div>
@@ -115,9 +117,12 @@ export default function DashboardPage() {
 
           <RecentJobs jobs={jobs} />
 
+          {/* AI Generated Daily Report */}
+          <AIReportCard />
+
         </div>
+
       </AppLayout>
     </>
   );
-
 }

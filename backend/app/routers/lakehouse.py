@@ -1,6 +1,7 @@
 from typing import List
 
 from fastapi import APIRouter, Query
+from fastapi.responses import FileResponse
 
 from app.schemas.health import (
     HealthResponse,
@@ -15,6 +16,7 @@ from app.schemas.maintenance import (
 from app.services.dashboard_service import DashboardService
 from app.services.iceberg_services import IcebergService
 from app.services.maintenance_service import MaintenanceService
+from app.services.ai_report_service import AIReportService
 
 
 router = APIRouter(
@@ -25,6 +27,7 @@ router = APIRouter(
 dashboard_service = DashboardService()
 iceberg_service = IcebergService()
 maintenance_service = MaintenanceService()
+report_service = AIReportService()
 
 
 # =====================================================
@@ -118,4 +121,45 @@ def confirm_maintenance(
         confirm=request.confirm,
         database=request.database,
         target=request.target,
+    )
+
+
+# =====================================================
+# AI Daily Report
+# =====================================================
+
+@router.get("/report")
+def generate_report():
+    return report_service.generate_daily_report()
+
+
+# =====================================================
+# Download PDF
+# =====================================================
+
+@router.get("/report/pdf")
+def download_pdf():
+
+    report = report_service.generate_daily_report()
+
+    return FileResponse(
+        report["pdf"],
+        media_type="application/pdf",
+        filename="Lakehouse_Daily_Report.pdf",
+    )
+
+
+# =====================================================
+# Download DOCX
+# =====================================================
+
+@router.get("/report/docx")
+def download_docx():
+
+    report = report_service.generate_daily_report()
+
+    return FileResponse(
+        report["docx"],
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        filename="Lakehouse_Daily_Report.docx",
     )
