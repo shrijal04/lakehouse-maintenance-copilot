@@ -9,6 +9,7 @@ from scheduler.scheduler import start_scheduler
 from app.routers.lakehouse import router
 from app.routers import etl
 from app.routers import copilot
+from app.routers import simulation
 
 
 
@@ -54,3 +55,4 @@ app.add_middleware(
 app.include_router(router)
 app.include_router(etl.router)
 app.include_router(copilot.router)
+app.include_router(simulation.router)

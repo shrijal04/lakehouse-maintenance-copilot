@@ -9,20 +9,26 @@ sys.path.append(
 
 from spark.manager import SparkManager
 
-spark = SparkManager().get_spark()
+TABLE = "local.silver.orders"
 
-TABLE = "local.lakehouse.orders"
 
-print("=" * 60)
-print("SESSION B")
-print("=" * 60)
+def main():
+    spark = SparkManager().get_spark()
 
-print("Updating immediately...")
+    print("=" * 60)
+    print("SESSION B")
+    print("=" * 60)
 
-spark.sql(f"""
-UPDATE {TABLE}
-SET status='SESSION_B'
-WHERE order_id = 1
-""")
+    print("Updating immediately...")
 
-print("SESSION B committed.")
+    spark.sql(f"""
+        UPDATE {TABLE}
+        SET status='SESSION_B'
+        WHERE order_id = 1
+    """)
+
+    print("SESSION B committed successfully.")
+
+
+if __name__ == "__main__":
+    main()

@@ -8,35 +8,96 @@ sys.path.append(
     )
 )
 
+from pyspark.errors.exceptions.captured import Py4JJavaError
 from spark.manager import SparkManager
 
-spark = SparkManager().get_spark()
+TABLE = "local.silver.orders"
 
-TABLE = "local.lakehouse.orders"
 
-print("=" * 60)
-print("SESSION A")
-print("=" * 60)
+def main():
 
-print("Reading table...")
+    spark = SparkManager().get_spark()
 
-spark.sql(f"""
-SELECT *
-FROM {TABLE}
-LIMIT 5
-""").show()
+    print("=" * 60)
+    print("SESSION A")
+    print("=" * 60)
 
-print("\nSleeping for 20 seconds...")
-print("Run session_b.py NOW.\n")
+    print("Reading table...")
 
-time.sleep(20)
+    spark.sql(f"""
+        SELECT *
+        FROM {TABLE}
+        LIMIT 5
+    """).show()
 
-print("Trying UPDATE...")
+    print()
 
-spark.sql(f"""
-UPDATE {TABLE}
-SET status='SESSION_A'
-WHERE order_id = 1
-""")
+    print("Snapshot loaded successfully.")
 
-print("\nSESSION A committed successfully.")
+    print()
+
+    print("Sleeping for 20 seconds...")
+
+    time.sleep(20)
+
+    print()
+
+    print("Trying UPDATE...")
+
+    try:
+
+        spark.sql(f"""
+            UPDATE {TABLE}
+            SET status='SESSION_A'
+            WHERE order_id = 1
+        """)
+
+        print()
+
+        print("SESSION A committed successfully.")
+
+        sys.exit(0)
+
+    except Py4JJavaError as e:
+
+        message = str(e)
+
+        if (
+            "ValidationException" in message
+            or
+            "Found conflicting files" in message
+        ):
+
+            print()
+
+            print("############################################")
+            print("OPTIMISTIC CONCURRENCY CONFLICT DETECTED")
+            print("Another session committed changes first.")
+            print("Iceberg rejected this transaction.")
+            print("############################################")
+
+            sys.exit(1)
+
+        else:
+
+            print()
+
+            print("Unexpected Spark Error")
+
+            print(message)
+
+            sys.exit(1)
+
+    except Exception as e:
+
+        print()
+
+        print("Unexpected Error")
+
+        print(str(e))
+
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
