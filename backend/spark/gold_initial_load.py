@@ -1,4 +1,4 @@
-from spark.manager import SparkManagerService
+from .manager import SparkManagerService
 
 
 class GoldInitialLoad:
@@ -8,7 +8,7 @@ class GoldInitialLoad:
         self.spark = SparkManagerService().get_spark()
 
         self.spark.sql(
-            "CREATE NAMESPACE IF NOT EXISTS local.lakehouse"
+            "CREATE NAMESPACE IF NOT EXISTS local.gold"
         )
 
     def create_daily_sales(self):
@@ -17,7 +17,7 @@ class GoldInitialLoad:
 
         self.spark.sql("""
 
-        CREATE OR REPLACE TABLE local.lakehouse.daily_sales
+        CREATE OR REPLACE TABLE local.gold.daily_sales
         USING iceberg AS
 
         SELECT
@@ -39,7 +39,7 @@ class GoldInitialLoad:
 
         self.spark.sql("""
 
-        CREATE OR REPLACE TABLE local.lakehouse.store_sales
+        CREATE OR REPLACE TABLE local.gold.store_sales
         USING iceberg AS
 
         SELECT
@@ -61,7 +61,7 @@ class GoldInitialLoad:
 
         self.spark.sql("""
 
-        CREATE OR REPLACE TABLE local.lakehouse.customer_sales
+        CREATE OR REPLACE TABLE local.gold.customer_sales
         USING iceberg AS
 
         SELECT

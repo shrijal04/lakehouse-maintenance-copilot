@@ -9,42 +9,38 @@ sys.path.append(
 )
 
 from pyspark.errors.exceptions.captured import Py4JJavaError
-from spark.manager import SparkManager
+from simulation.spark_factory import create_spark
 
 TABLE = "local.silver.orders"
 
 
 def main():
 
-    spark = SparkManager().get_spark()
-
-    print("=" * 60)
-    print("SESSION A")
-    print("=" * 60)
-
-    print("Reading table...")
-
-    spark.sql(f"""
-        SELECT *
-        FROM {TABLE}
-        LIMIT 5
-    """).show()
-
-    print()
-
-    print("Snapshot loaded successfully.")
-
-    print()
-
-    print("Sleeping for 20 seconds...")
-
-    time.sleep(20)
-
-    print()
-
-    print("Trying UPDATE...")
+    spark = create_spark("OCC Session A")
 
     try:
+
+        print("=" * 60)
+        print("SESSION A")
+        print("=" * 60)
+
+        print("Reading table...")
+
+        spark.sql(f"""
+            SELECT *
+            FROM {TABLE}
+            LIMIT 5
+        """).show()
+
+        print()
+        print("Snapshot loaded successfully.")
+        print()
+        print("Sleeping for 20 seconds...")
+
+        time.sleep(20)
+
+        print()
+        print("Trying UPDATE...")
 
         spark.sql(f"""
             UPDATE {TABLE}
@@ -53,7 +49,6 @@ def main():
         """)
 
         print()
-
         print("SESSION A committed successfully.")
 
         sys.exit(0)
@@ -64,12 +59,10 @@ def main():
 
         if (
             "ValidationException" in message
-            or
-            "Found conflicting files" in message
+            or "Found conflicting files" in message
         ):
 
             print()
-
             print("############################################")
             print("OPTIMISTIC CONCURRENCY CONFLICT DETECTED")
             print("Another session committed changes first.")
@@ -81,9 +74,7 @@ def main():
         else:
 
             print()
-
             print("Unexpected Spark Error")
-
             print(message)
 
             sys.exit(1)
@@ -91,12 +82,14 @@ def main():
     except Exception as e:
 
         print()
-
         print("Unexpected Error")
-
         print(str(e))
 
         sys.exit(1)
+
+    finally:
+
+        spark.stop()
 
 
 if __name__ == "__main__":

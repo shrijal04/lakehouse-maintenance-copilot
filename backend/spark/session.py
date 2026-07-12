@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession
 
-from spark.config import JDBC_JAR, WAREHOUSE_PATH
+from .config import JDBC_JAR, WAREHOUSE_PATH
 
 
 class SparkManager:

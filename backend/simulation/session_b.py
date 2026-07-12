@@ -7,27 +7,34 @@ sys.path.append(
     )
 )
 
-from spark.manager import SparkManager
+from simulation.spark_factory import create_spark
 
 TABLE = "local.silver.orders"
 
 
 def main():
-    spark = SparkManager().get_spark()
 
-    print("=" * 60)
-    print("SESSION B")
-    print("=" * 60)
+    spark = create_spark("OCC Session B")
 
-    print("Updating immediately...")
+    try:
 
-    spark.sql(f"""
-        UPDATE {TABLE}
-        SET status='SESSION_B'
-        WHERE order_id = 1
-    """)
+        print("=" * 60)
+        print("SESSION B")
+        print("=" * 60)
 
-    print("SESSION B committed successfully.")
+        print("Updating immediately...")
+
+        spark.sql(f"""
+            UPDATE {TABLE}
+            SET status='SESSION_B'
+            WHERE order_id = 1
+        """)
+
+        print("SESSION B committed successfully.")
+
+    finally:
+
+        spark.stop()
 
 
 if __name__ == "__main__":

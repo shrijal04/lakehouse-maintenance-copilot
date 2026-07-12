@@ -35,6 +35,7 @@ def chat(request: ChatRequest):
         "generate report",
         "health report",
         "maintenance report",
+        "reports",
     ]
 
     if any(keyword in user_message for keyword in report_keywords):

@@ -1,4 +1,4 @@
-from spark.session import SparkManager
+from .session import SparkManager
 
 
 class SparkManagerService:
