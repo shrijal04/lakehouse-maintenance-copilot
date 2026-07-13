@@ -1,527 +1,407 @@
 # 🏔️ Lakehouse Maintenance Copilot
 
-An AI-powered Lakehouse Maintenance Copilot that monitors Apache Iceberg table health, detects lakehouse degradation, executes maintenance operations, visualizes historical health metrics, and provides an intelligent AI assistant capable of interacting with the lakehouse through MCP (Model Context Protocol) tools.
+## 📌 Project Overview
+
+Lakehouse Maintenance Copilot is a complete data engineering project built to demonstrate how a modern Lakehouse can automatically monitor its health, detect problems, perform maintenance, and provide AI-powered recommendations.
+
+The project simulates a real-world data pipeline where data is continuously loaded from a PostgreSQL database into Apache Iceberg tables using Apache Spark. Over time, this creates common Lakehouse problems such as small files, increasing snapshots, and metadata growth.
+
+Instead of requiring a data engineer to manually monitor these issues, the Lakehouse Maintenance Copilot continuously checks the health of the tables, detects problems, recommends maintenance actions, performs maintenance operations, and generates AI-powered incident reports.
+
+The project also includes an Optimistic Concurrency Control (OCC) simulation to demonstrate how Apache Iceberg safely handles concurrent writes from multiple Spark sessions.
 
 ---
 
-# Project Overview
+# 🎯 Objectives
 
-This project simulates a modern retail company's data platform.
+The main objectives of this project are:
 
-A PostgreSQL OLTP database stores transactional order data. Apache Spark incrementally ingests this data into Apache Iceberg tables, creating a local Lakehouse architecture.
-
-Repeated incremental loads intentionally generate multiple snapshots and metadata growth to simulate real production environments.
-
-The application continuously monitors Iceberg table health by collecting metadata such as:
-
-- Snapshot Count
-- Data File Count
-- Average File Size
-- Manifest File Count
-- Total Table Size
-- Orphan File Count
-
-Health metrics are stored in PostgreSQL to maintain historical trends.
-
-An AI Copilot powered by Groq + Llama 3.3 can answer questions, inspect table health, detect issues, and request maintenance through MCP tools.
+* Build an end-to-end Lakehouse ETL pipeline
+* Perform Incremental ETL using Apache Spark
+* Store data in Apache Iceberg tables
+* Simulate common Lakehouse maintenance problems
+* Continuously monitor Lakehouse health
+* Automatically perform maintenance
+* Track maintenance history
+* Generate AI-powered maintenance reports
+* Visualize health metrics using a modern dashboard
+* Demonstrate Optimistic Concurrency Control (OCC)
 
 ---
 
-# Tech Stack
+# 🏗️ Project Architecture
+
+```
+                 PostgreSQL
+                      │
+             Incremental ETL
+              (Apache Spark)
+                      │
+                      │
+                  Silver Layer
+                  (Iceberg)         
+                      │
+              Health Monitoring
+                      │
+                Maintenance Engine
+                      │
+      -------------------------------
+      │                             │
+ AI Maintenance Report      Scheduler
+      │                             │
+      └──────────────┬──────────────┘
+                     │
+              FastAPI Backend
+                     │
+              Next.js Dashboard
+```
+
+---
+
+# 🛠️ Technology Stack
 
 ## Backend
 
-- Python
-- FastAPI
-- SQLAlchemy
-- PostgreSQL
+* Python
+* FastAPI
+* SQLAlchemy
+* APScheduler
 
 ## Data Engineering
 
-- Apache Spark
-- Apache Iceberg
+* Apache Spark
+* Apache Iceberg
+* PostgreSQL
+
+## Frontend
+
+* Next.js
+* TypeScript
+* Tailwind CSS
+* Recharts
 
 ## AI
 
-- Groq API
-- Llama 3.3 70B Versatile
-- FastMCP (Model Context Protocol)
-
-## Frontend
-
-- Next.js
-- React
-- Tailwind CSS
-- Recharts
+* Groq API
+* Llama 3.3 70B Versatile
 
 ---
 
-# Project Structure
 
-```text
-lakehouse-maintenance-copilot/
+# ✨ Features
 
-├── backend/
-│   ├── app/
-│   ├── maintenance/
-│   ├── etl/
-│   ├── generators/
-│   ├── simulation/
-│   ├── spark/
-│   ├── requirements.txt
-│   └── .venv
-│
-├── frontend/
-│
-├── docs/
-│
-└── README.md
-```
+## 1. Database Seeding
+
+The project begins by generating realistic business data using Faker.
+
+Generated data includes:
+
+* Products
+* Customers
+* Stores
+* Orders
+* Order Items
+
+This data is stored inside PostgreSQL.
 
 ---
 
-# System Architecture
+## 2. Incremental ETL Pipeline
 
-```
-PostgreSQL
-      │
-      ▼
-Apache Spark
-      │
-      ▼
-Apache Iceberg
-      │
-      ▼
-Health Metrics
-      │
-      ▼
-FastAPI Backend
-      │
-      ├──────── Dashboard APIs
-      │
-      └──────── AI Copilot
-                     │
-                     ▼
-               MCP Tool Server
-                     │
-                     ▼
-               Health Tools
-               Issues Tools
-               Maintenance Tools
-```
+Instead of loading the complete database every time, the ETL only loads newly added or updated records.
+
+Benefits:
+
+* Faster processing
+* Less memory usage
+* Reduced processing cost
+
+Apache Spark performs all ETL operations.
 
 ---
 
-# Project Milestones
+## 3. Silver Layer
+
+The Silver Layer stores cleaned and structured business data.
+
+Tables include:
+
+* customers
+* products
+* stores
+* orders
+* order_items
+
+These are stored as Apache Iceberg tables.
 
 ---
 
-# ✅ Milestone 1 — PostgreSQL Source System
+## 4. Gold Layer
 
-Built a realistic retail OLTP database.
+The Gold Layer contains business-ready analytics tables created from the Silver Layer.
 
-## Database Schema
+Examples include:
 
-Dimension Tables
+* Sales summaries
+* Product analysis
+* Customer insights
 
-- Categories
-- Brands
-- Stores
-- Customers
-- Products
-
-Fact Tables
-
-- Orders
-- Order Items
-
-The schema is normalized using foreign key relationships.
+These tables are optimized for reporting.
 
 ---
 
-## Synthetic Data Generation
+## 5. Small File Simulation
 
-Generated using Python and Faker.
+The project intentionally creates many tiny Iceberg files by repeatedly inserting small batches of data.
 
-Generated tables:
+This helps demonstrate one of the most common Lakehouse problems.
 
-- Categories
-- Brands
-- Stores
-- Products
-- Customers
-- Orders
-- Order Items
+Problems caused by small files:
 
-Dataset Size
-
-| Table | Records |
-|--------|---------:|
-| Categories | 10 |
-| Brands | 12 |
-| Stores | 8 |
-| Products | 50 |
-| Customers | 100 |
-| Orders | 500 |
-| Order Items | ~1500 |
+* Slow queries
+* Increased metadata
+* More snapshots
+* Higher storage overhead
 
 ---
 
-# ✅ Milestone 2 — Apache Iceberg Lakehouse
+## 6. Health Monitoring
 
-Implemented:
+The Health Service continuously checks every monitored Iceberg table.
 
-- Spark Session
-- Iceberg Catalog
-- Initial ETL
-- Incremental Data Loading
-- Snapshot Creation
-- Iceberg Metadata
-- Iceberg SQL Support
+Metrics collected include:
 
-Tables Created
+* Snapshot Count
+* Data File Count
+* Average File Size
+* Total Table Size
+* Manifest File Count
+* Orphan File Count
+* Health Score
 
-- Orders
-- Order Items
-
-Repeated incremental ingestion creates multiple snapshots and metadata growth to simulate real-world lakehouse degradation.
+These metrics are saved into PostgreSQL for historical tracking.
 
 ---
 
-# ✅ Milestone 3 — Lakehouse Health Monitoring
+## 7. Dashboard
 
-Implemented health monitoring for Iceberg tables.
+The dashboard displays:
 
-Metrics collected:
+* Overall Health Score
+* Pipeline Status
+* Maintenance History
+* Health Trends
+* Table Metrics
 
-- Snapshot Count
-- Data File Count
-- Average File Size
-- Total Table Size
-- Manifest File Count
-- Orphan File Count
 
-Each health check is stored in PostgreSQL, allowing historical trend analysis.
+The dashboard updates using FastAPI APIs.
 
 ---
 
-# ✅ Milestone 4 — FastAPI Backend
+## 8. Maintenance Engine
 
-Built REST APIs exposing lakehouse information.
+The maintenance engine automatically fixes unhealthy Iceberg tables.
 
-Implemented endpoints:
+Maintenance operations include:
 
-## Health
+### Data File Compaction
 
-- `/lakehouse/orders/health`
-- `/lakehouse/order-items/health`
+Combines many small files into fewer larger files.
 
-## History
+Benefits:
 
-- `/lakehouse/orders/history`
-- `/lakehouse/order-items/history`
+* Faster queries
+* Reduced metadata
+* Better storage efficiency
 
-## Issues
+### Snapshot Expiration
 
-- Detect unhealthy Iceberg tables
+Removes old Iceberg snapshots that are no longer needed.
 
-## Maintenance
+Benefits:
 
-- Request maintenance
-- Confirmation workflow
-- Execute maintenance
-
----
-
-# ✅ Milestone 5 — Dashboard
-
-Built a modern dashboard using Next.js.
-
-Features include:
-
-- Lakehouse Overview
-- Health Metrics
-- Historical Trend Charts
-- Maintenance History
-- Interactive Charts
-- Responsive Layout
-- Dark Theme
-- Loading Overlay while fetching data
+* Smaller metadata
+* Better performance
 
 ---
 
-# ✅ Milestone 6 — AI Copilot
+## 9. Scheduled Health Checks
 
-Integrated Groq using the Llama 3.3 70B Versatile model.
+Using APScheduler, the application automatically checks Lakehouse health every few minutes.
 
-Capabilities include:
+Scheduler responsibilities:
 
-- Apache Iceberg Q&A
-- Spark Q&A
-- Lakehouse Concepts
-- Maintenance Best Practices
-- Markdown Responses
-- Tool-based responses
+* Collect health metrics
+* Save metrics
+* Refresh dashboard alerts
+* Detect unhealthy tables
 
----
-
-# ✅ Milestone 7 — MCP Integration
-
-Implemented FastMCP server exposing lakehouse operations as AI tools.
-
-Available MCP Tools
-
-### Health Tool
-
-Returns live Iceberg table health.
-
-Example
-
-```
-Health of orders table
-```
+No manual intervention is required.
 
 ---
 
-### Issues Tool
+## 10. Maintenance History
 
-Detects health issues.
+Every maintenance operation is recorded.
 
-Example
+Stored information includes:
 
-```
-Show issues in order_items
-```
+* Table name
+* Operation performed
+* Time
+* Status
+* Before metrics
+* After metrics
 
----
-
-### Maintenance Tool
-
-Requests maintenance.
-
-Maintenance requires explicit confirmation before execution.
-
-Example
-
-```
-Clean the orders table
-```
-
-Workflow
-
-```
-User
-   │
-   ▼
-Request Maintenance
-   │
-   ▼
-Confirmation Required
-   │
-   ▼
-User Confirms
-   │
-   ▼
-Maintenance Executes
-```
+This allows users to track all maintenance activities.
 
 ---
 
-# ✅ Milestone 8 — Maintenance Workflow
+## 11. AI Maintenance Copilot
 
-Implemented:
+The AI Copilot uses Groq's Llama model.
 
-- Rewrite Data Files
-- Rewrite Manifest Files
-- Snapshot Expiration
-- Remove Orphan Files
+Users can ask questions such as:
 
-Maintenance supports:
+* Why is my table unhealthy?
+* What is compaction?
+* Why are snapshots increasing?
+* What maintenance should I perform?
 
-- orders
-- order_items
-- both tables together
+The AI provides easy-to-understand explanations and recommendations.
 
 ---
 
-# ✅ Milestone 9 — AI Confirmation Workflow
+## 12. AI Incident Report
 
-Implemented confirmation management.
+The application automatically generates an AI report containing:
 
-Workflow
+* Summary
+* Health Analysis
+* Issues Found
+* Maintenance Performed
+* Recommendations
+* Overall Status
 
-```
-User
-      │
-      ▼
-Run Maintenance
-      │
-      ▼
-AI Requests Confirmation
-      │
-      ▼
-User replies Yes / No
-      │
-      ▼
-Maintenance Executes or Cancels
-```
-
-This prevents accidental destructive operations.
+This helps engineers quickly understand the health of the Lakehouse.
 
 ---
 
-# ✅ Milestone 10 — Optimistic Concurrency Conflict Simulation
+## 13. Optimistic Concurrency Control (OCC) Simulation
 
-Implemented a simulation demonstrating Apache Iceberg's optimistic concurrency control.
+The project demonstrates Apache Iceberg's Optimistic Concurrency Control.
 
-The simulation creates two independent Spark applications attempting to update the same table simultaneously.
+Two Spark sessions attempt to update the same table simultaneously.
 
-Expected Result
+Results:
 
-One update succeeds while the second fails with a ValidationException.
+* One transaction succeeds.
+* The conflicting transaction fails.
+* Iceberg prevents data corruption.
 
-Instead of exposing a large Java stack trace, the backend converts the error into a plain English explanation:
-
-> Another user modified the table while maintenance was running. Iceberg stopped this operation to prevent data corruption. No data was lost. You can safely retry the maintenance.
-
----
-
-# Running the Project
-
-## Backend
-
-Create virtual environment
-
-```bash
-cd backend
-
-python -m venv .venv
-```
-
-Activate
-
-Windows
-
-```bash
-.venv\Scripts\activate
-```
-
-Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-
-
-Start FastAPI
-
-```bash
-uvicorn app.main:app --reload
-```
+This demonstrates safe concurrent writes.
 
 ---
 
-## MCP Server
 
-Start the MCP server
+# 📈 Dashboard Pages
 
-```bash
-python -m app.mcp.server
-```
+The frontend contains pages for:
 
----
-
-## Frontend
-
-```bash
-cd frontend
-
-npm install
-
-npm run dev
-```
+* Dashboard
+* Pipeline
+* Lakehouse Health
+* Maintenance
+* AI Copilot
+* OCC Simulation
 
 ---
 
-# Current Progress
+# 🔄 Complete Workflow
 
-## ✅ Completed
-
-- PostgreSQL Source System
-- Synthetic Dataset Generator
-- Apache Spark Setup
-- Apache Iceberg Setup
-- Initial ETL
-- Incremental Loads
-- Iceberg Health Monitoring
-- Health History Storage
-- FastAPI Backend
-- REST APIs
-- Dashboard
-- Trend Charts
-- Loading Overlay
-- AI Copilot
-- FastMCP Server
-- Health Tool
-- Issues Tool
-- Maintenance Tool
-- Confirmation Workflow
-- Maintenance Execution
-- Optimistic Concurrency Conflict Simulation
-- Plain-English Error Explanation
+1. Seed PostgreSQL with sample business data.
+2. Run Incremental ETL using Apache Spark.
+3. Load data into Iceberg Silver tables.
+4. Create Gold analytics tables.
+5. Simulate small-file problems.
+6. Monitor Lakehouse health.
+7. Save health metrics into PostgreSQL.
+8. Display metrics on the dashboard.
+9. Detect unhealthy tables.
+10. Run maintenance operations.
+11. Store maintenance history.
+12. Generate AI-powered incident reports.
+13. Ask the AI Copilot for recommendations.
+14. Demonstrate Optimistic Concurrency Control.
 
 ---
 
-## 🚧 In Progress
+# 📊 Health Metrics
 
-- Automatic Scheduled Health Checks
-- AI Proactive Health Alerts
+The system tracks:
 
----
-
-# Stretch Goals
-
-## Automatic Health Monitoring
-
-- Run health checks automatically on a schedule
-- Store health history continuously
-- Detect unhealthy tables automatically
+* Snapshot Count
+* Data File Count
+* Average File Size
+* Total Table Size
+* Manifest File Count
+* Orphan File Count
+* Health Score
 
 ---
 
-## Proactive AI Alerts
+# 🚀 Future Improvements
 
-Allow the AI assistant to notify users before they ask.
+Possible future enhancements include:
 
-Example
-
-```
-⚠️ The orders table has accumulated many manifest files.
-
-Maintenance is recommended.
-```
-
----
-
-# Future Enhancements
-
-- MCP Client Integration
-- Retrieval-Augmented Generation (RAG)
-- Context-aware AI responses
-- Automatic maintenance recommendations
-- Maintenance audit logs
-- Multi-table monitoring
-- Role-based approvals
-- Remote Iceberg Catalog support
-- Cloud object storage integration
+* Support for cloud storage (AWS S3, Azure Data Lake, Google Cloud Storage)
+* Support for multiple Iceberg catalogs
+* Role-based authentication
+* Email and Slack notifications
+* Predictive maintenance using machine learning
+* Automatic maintenance scheduling based on health score
+* Integration with Apache Airflow
+* Real-time monitoring with streaming data
 
 ---
 
-# Author
+# 🎓 What This Project Demonstrates
+
+This project demonstrates practical knowledge of:
+
+* Data Engineering
+* Apache Spark
+* Apache Iceberg
+* Incremental ETL
+* Lakehouse Architecture
+* FastAPI Development
+* PostgreSQL
+* Next.js
+* AI Integration
+* REST APIs
+* Dashboard Development
+* Data Pipeline Monitoring
+* Lakehouse Maintenance
+* Optimistic Concurrency Control (OCC)
+
+---
+
+# 📸 Screenshots
+
+You can add screenshots here for:
+
+* Dashboard
+* Health Metrics
+* Pipeline
+* Maintenance Page
+* AI Copilot
+* Incident Report
+* OCC Simulation
+
+---
+
+# 👨‍💻 Author
 
 **Shrijal Sthapit**
 
-Bootcamp Capstone Project
-
-**Lakehouse Maintenance Copilot**
+Built as part of a Data Engineering Bootcamp project to demonstrate a complete Lakehouse Maintenance solution using Apache Spark, Apache Iceberg, FastAPI, Next.js, and AI-powered maintenance assistance.
