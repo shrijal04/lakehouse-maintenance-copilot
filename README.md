@@ -29,32 +29,9 @@ The main objectives of this project are:
 
 ---
 
-# 🏗️ Project Architecture
+# 🏗️ System Architecture
 
-```
-                 PostgreSQL
-                      │
-             Incremental ETL
-              (Apache Spark)
-                      │
-                      │
-                  Silver Layer
-                  (Iceberg)         
-                      │
-              Health Monitoring
-                      │
-                Maintenance Engine
-                      │
-      -------------------------------
-      │                             │
- AI Maintenance Report      Scheduler
-      │                             │
-      └──────────────┬──────────────┘
-                     │
-              FastAPI Backend
-                     │
-              Next.js Dashboard
-```
+![Lakehouse Maintenance Copilot Architecture](images/architecture.png)
 
 ---
 
