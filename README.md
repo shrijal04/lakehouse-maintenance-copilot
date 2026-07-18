@@ -361,21 +361,6 @@ This project demonstrates practical knowledge of:
 * Lakehouse Maintenance
 * Optimistic Concurrency Control (OCC)
 
----
-
-# 📸 Screenshots
-
-You can add screenshots here for:
-
-* Dashboard
-* Health Metrics
-* Pipeline
-* Maintenance Page
-* AI Copilot
-* Incident Report
-* OCC Simulation
-
----
 
 # 👨‍💻 Author
 
